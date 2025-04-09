@@ -3,6 +3,7 @@ package view;
 import controller.ApplicationController;
 import controller.PetController;
 import controller.AdopterController; // Assuming we need it later
+import model.Pet; // Add import for Pet class
 
 import javax.swing.*;
 import java.awt.*;
@@ -20,11 +21,11 @@ public class MainFrame extends JFrame {
     private boolean isAdminMode = false; // Default to adopter mode
 
     // Panels
-    private PetBrowsePanel petBrowsePanel;
+    PetBrowsePanel petBrowsePanel;
     private ApplicationPanel applicationPanel;
-    private StatusPanel statusPanel;
+    StatusPanel statusPanel;
     private PreferencesPanel preferencesPanel;
-    private MatchedPetsPanel matchedPetsPanel;
+    MatchedPetsPanel matchedPetsPanel;
     private AdminPetPanel adminPetPanel;
     private AdminApplicationPanel adminApplicationPanel;
 
@@ -37,6 +38,10 @@ public class MainFrame extends JFrame {
     // In a real app, this would come from a login process.
     // Let's use ID 1, assuming Alice Smith was inserted as sample data.
     private static final int CURRENT_ADOPTER_ID = 1;
+
+    public int getCurrentAdopterId() {
+        return CURRENT_ADOPTER_ID;
+    }
 
     public MainFrame() {
         setTitle("Pet Adoption Platform");
@@ -191,10 +196,5 @@ public class MainFrame extends JFrame {
                     "Pet Unavailable", JOptionPane.WARNING_MESSAGE);
             petBrowsePanel.refreshPetList(); // Refresh browse view
         }
-    }
-
-    // Method to get the current (hardcoded) adopter ID
-    public int getCurrentAdopterId() {
-        return CURRENT_ADOPTER_ID;
     }
 }

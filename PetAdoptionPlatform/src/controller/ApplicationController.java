@@ -37,7 +37,6 @@ public class ApplicationController {
                 }
             }
 
-
             return Database.addApplication(application);
         } catch (SQLException e) {
             System.err.println("Error submitting application via controller: " + e.getMessage());
