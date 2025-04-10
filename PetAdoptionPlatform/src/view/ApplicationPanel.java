@@ -149,15 +149,13 @@ public class ApplicationPanel extends JPanel {
             // adopterNameField.setText("");
             // contactInfoField.setText("");
             mainFrame.showPanel("ViewStatus"); // Go to status view after applying
-            mainFrame.statusPanel.loadApplications(adopterId); // Refresh status panel
-            mainFrame.petBrowsePanel.refreshPetList(); // Refresh browse panel as pet might be pending now (or adopted if auto-approved)
-
-
+            mainFrame.getStatusPanel().loadApplications(adopterId); // Refresh status panel
+            mainFrame.getPetBrowsePanel().refreshPetList(); // Refresh browse panel as pet might be pending now (or adopted if auto-approved)
         } else {
             JOptionPane.showMessageDialog(this,
                     "Failed to submit application. The pet might no longer be available or a database error occurred.",
                     "Submission Failed", JOptionPane.ERROR_MESSAGE);
-            mainFrame.petBrowsePanel.refreshPetList(); // Refresh browse list
+            mainFrame.getPetBrowsePanel().refreshPetList(); // Refresh browse list
         }
     }
 }

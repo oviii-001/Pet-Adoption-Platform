@@ -8,8 +8,13 @@ public class Pet {
     private int age;
     private String description;
     private String status; // e.g., "available", "adopted"
+    private String gender;
+    private String breed;
+    private String healthStatus;
+    private String temperament;
 
-    public Pet(int petId, String name, String type, String size, int age, String description, String status) {
+    public Pet(int petId, String name, String type, String size, int age, String description, String status,
+              String gender, String breed, String healthStatus, String temperament) {
         this.petId = petId;
         this.name = name;
         this.type = type;
@@ -17,6 +22,10 @@ public class Pet {
         this.age = age;
         this.description = description;
         this.status = status;
+        this.gender = gender;
+        this.breed = breed;
+        this.healthStatus = healthStatus;
+        this.temperament = temperament;
     }
 
     // Getters
@@ -27,8 +36,12 @@ public class Pet {
     public int getAge() { return age; }
     public String getDescription() { return description; }
     public String getStatus() { return status; }
+    public String getGender() { return gender; }
+    public String getBreed() { return breed; }
+    public String getHealthStatus() { return healthStatus; }
+    public String getTemperament() { return temperament; }
 
-    // Setters (optional if mostly immutable after creation, but needed for editing)
+    // Setters
     public void setPetId(int petId) { this.petId = petId; }
     public void setName(String name) { this.name = name; }
     public void setType(String type) { this.type = type; }
@@ -36,6 +49,10 @@ public class Pet {
     public void setAge(int age) { this.age = age; }
     public void setDescription(String description) { this.description = description; }
     public void setStatus(String status) { this.status = status; }
+    public void setGender(String gender) { this.gender = gender; }
+    public void setBreed(String breed) { this.breed = breed; }
+    public void setHealthStatus(String healthStatus) { this.healthStatus = healthStatus; }
+    public void setTemperament(String temperament) { this.temperament = temperament; }
 
     @Override
     public String toString() {

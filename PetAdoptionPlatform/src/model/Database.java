@@ -28,6 +28,10 @@ public class Database {
     public static void initializeDatabase() {
         // Combined table creation script
         String sql = """
+            DROP TABLE IF EXISTS Application;
+            DROP TABLE IF EXISTS Pet;
+            DROP TABLE IF EXISTS Adopter;
+
             CREATE TABLE IF NOT EXISTS Pet (
                 pet_id INTEGER PRIMARY KEY AUTOINCREMENT,
                 name TEXT NOT NULL,
@@ -35,7 +39,11 @@ public class Database {
                 size TEXT,
                 age INTEGER,
                 description TEXT,
-                status TEXT DEFAULT 'available'
+                status TEXT DEFAULT 'available',
+                gender TEXT,
+                breed TEXT,
+                health_status TEXT,
+                temperament TEXT
             );
 
             CREATE TABLE IF NOT EXISTS Adopter (
@@ -72,9 +80,12 @@ public class Database {
         if (getAllPets().isEmpty()) {
             System.out.println("Inserting sample data...");
             try {
-                addPet(new Pet(0, "Buddy", "Dog", "Medium", 3, "Friendly Golden Retriever", "available"));
-                addPet(new Pet(0, "Whiskers", "Cat", "Small", 2, "Shy but sweet tabby", "available"));
-                addPet(new Pet(0, "Rocky", "Dog", "Large", 5, "Energetic German Shepherd", "available"));
+                addPet(new Pet(0, "Buddy", "Dog", "Medium", 3, "Friendly Golden Retriever", "available",
+                    "Male", "Golden Retriever", "Healthy", "Friendly"));
+                addPet(new Pet(0, "Whiskers", "Cat", "Small", 2, "Shy but sweet tabby", "available",
+                    "Female", "Tabby", "Healthy", "Shy"));
+                addPet(new Pet(0, "Rocky", "Dog", "Large", 5, "Energetic German Shepherd", "available",
+                    "Male", "German Shepherd", "Healthy", "Energetic"));
                 addAdopter(new Adopter(0, "Alice Smith", "alice@email.com", "type:Dog,size:Medium"));
                 System.out.println("Sample data inserted.");
             } catch (SQLException e) {
@@ -113,7 +124,11 @@ public class Database {
                         rs.getString("size"),
                         rs.getInt("age"),
                         rs.getString("description"),
-                        rs.getString("status")
+                        rs.getString("status"),
+                        rs.getString("gender"),
+                        rs.getString("breed"),
+                        rs.getString("health_status"),
+                        rs.getString("temperament")
                 ));
             }
         } catch (SQLException e) {
@@ -125,7 +140,6 @@ public class Database {
     public static List<Pet> getAvailablePets() {
         List<Pet> pets = new ArrayList<>();
         String sql = "SELECT * FROM Pet WHERE status = 'available'";
-        // Similar implementation to getAllPets, just add the WHERE clause
         try (Connection conn = getConnection();
              Statement stmt = conn.createStatement();
              ResultSet rs = stmt.executeQuery(sql)) {
@@ -138,7 +152,11 @@ public class Database {
                         rs.getString("size"),
                         rs.getInt("age"),
                         rs.getString("description"),
-                        rs.getString("status")
+                        rs.getString("status"),
+                        rs.getString("gender"),
+                        rs.getString("breed"),
+                        rs.getString("health_status"),
+                        rs.getString("temperament")
                 ));
             }
         } catch (SQLException e) {
@@ -162,7 +180,11 @@ public class Database {
                         rs.getString("size"),
                         rs.getInt("age"),
                         rs.getString("description"),
-                        rs.getString("status")
+                        rs.getString("status"),
+                        rs.getString("gender"),
+                        rs.getString("breed"),
+                        rs.getString("health_status"),
+                        rs.getString("temperament")
                 );
             }
         } catch (SQLException e) {
@@ -172,7 +194,8 @@ public class Database {
     }
 
     public static boolean addPet(Pet pet) throws SQLException {
-        String sql = "INSERT INTO Pet (name, type, size, age, description, status) VALUES (?, ?, ?, ?, ?, ?)";
+        String sql = "INSERT INTO Pet (name, type, size, age, description, status, gender, breed, health_status, temperament) " +
+                    "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
         try (Connection conn = getConnection();
              PreparedStatement pstmt = conn.prepareStatement(sql)) {
             pstmt.setString(1, pet.getName());
@@ -181,13 +204,18 @@ public class Database {
             pstmt.setInt(4, pet.getAge());
             pstmt.setString(5, pet.getDescription());
             pstmt.setString(6, pet.getStatus());
+            pstmt.setString(7, pet.getGender());
+            pstmt.setString(8, pet.getBreed());
+            pstmt.setString(9, pet.getHealthStatus());
+            pstmt.setString(10, pet.getTemperament());
             int affectedRows = pstmt.executeUpdate();
             return affectedRows > 0;
         }
     }
 
     public static boolean updatePet(Pet pet) throws SQLException {
-        String sql = "UPDATE Pet SET name = ?, type = ?, size = ?, age = ?, description = ?, status = ? WHERE pet_id = ?";
+        String sql = "UPDATE Pet SET name = ?, type = ?, size = ?, age = ?, description = ?, status = ?, " +
+                    "gender = ?, breed = ?, health_status = ?, temperament = ? WHERE pet_id = ?";
         try (Connection conn = getConnection();
              PreparedStatement pstmt = conn.prepareStatement(sql)) {
             pstmt.setString(1, pet.getName());
@@ -196,7 +224,11 @@ public class Database {
             pstmt.setInt(4, pet.getAge());
             pstmt.setString(5, pet.getDescription());
             pstmt.setString(6, pet.getStatus());
-            pstmt.setInt(7, pet.getPetId());
+            pstmt.setString(7, pet.getGender());
+            pstmt.setString(8, pet.getBreed());
+            pstmt.setString(9, pet.getHealthStatus());
+            pstmt.setString(10, pet.getTemperament());
+            pstmt.setInt(11, pet.getPetId());
             int affectedRows = pstmt.executeUpdate();
             return affectedRows > 0;
         }

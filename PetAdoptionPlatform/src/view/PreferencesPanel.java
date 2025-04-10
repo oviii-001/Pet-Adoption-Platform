@@ -172,7 +172,7 @@ public class PreferencesPanel extends JPanel {
         // First, save current selections (optional, could just use current state)
         // savePreferences(); // Decide if saving is mandatory before viewing matches
         System.out.println("Navigating to matched pets view for adopter " + currentAdopterId);
-        mainFrame.matchedPetsPanel.loadMatchedPets(currentAdopterId); // Load matches in the dedicated panel
+        mainFrame.getMatchedPetsPanel().loadMatchedPets(currentAdopterId); // Load matches in the dedicated panel
         mainFrame.showPanel("MatchedPets"); // Switch to the matched pets panel
     }
 }

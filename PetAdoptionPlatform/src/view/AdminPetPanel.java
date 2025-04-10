@@ -26,6 +26,13 @@ public class AdminPetPanel extends JPanel {
     private JTextField ageField;
     private JTextArea descriptionArea;
     private JComboBox<String> statusComboBox;
+    private JComboBox<String> genderComboBox;
+    private JTextField breedField;
+    private JTextField healthStatusField;
+    private JTextField temperamentField;
+    private JButton imageButton;
+    private JLabel imagePreview;
+    private String selectedImagePath;
 
     // Buttons
     private JButton addButton;
@@ -96,8 +103,23 @@ public class AdminPetPanel extends JPanel {
         gbc.anchor = GridBagConstraints.WEST;
         gbc.fill = GridBagConstraints.HORIZONTAL;
 
-        // ID (Read-only)
+        // Image Selection
         gbc.gridx = 0; gbc.gridy = 0;
+        formPanel.add(new JLabel("Image:"), gbc);
+        gbc.gridx = 1;
+        JPanel imagePanel = new JPanel(new BorderLayout());
+        imageButton = new JButton("Select Image");
+        imageButton.addActionListener(e -> selectImage());
+        imagePanel.add(imageButton, BorderLayout.WEST);
+        
+        imagePreview = new JLabel();
+        imagePreview.setPreferredSize(new Dimension(100, 100));
+        imagePreview.setBorder(BorderFactory.createLineBorder(Color.LIGHT_GRAY));
+        imagePanel.add(imagePreview, BorderLayout.EAST);
+        formPanel.add(imagePanel, gbc);
+
+        // ID (Read-only)
+        gbc.gridx = 0; gbc.gridy++;
         formPanel.add(new JLabel("ID:"), gbc);
         gbc.gridx = 1;
         idField = new JTextField(5);
@@ -107,16 +129,16 @@ public class AdminPetPanel extends JPanel {
         // Name
         gbc.gridx = 0; gbc.gridy++;
         formPanel.add(new JLabel("Name:"), gbc);
-        gbc.gridx = 1; gbc.gridwidth = 2; // Span 2 cols
+        gbc.gridx = 1; gbc.gridwidth = 2;
         nameField = new JTextField(15);
         formPanel.add(nameField, gbc);
-        gbc.gridwidth = 1; // Reset span
+        gbc.gridwidth = 1;
 
         // Type
         gbc.gridx = 0; gbc.gridy++;
         formPanel.add(new JLabel("Type:"), gbc);
         gbc.gridx = 1;
-        typeComboBox = new JComboBox<>(new String[]{"Dog", "Cat", "Other"}); // Consistent options
+        typeComboBox = new JComboBox<>(new String[]{"Dog", "Cat", "Other"});
         formPanel.add(typeComboBox, gbc);
 
         // Size
@@ -133,22 +155,52 @@ public class AdminPetPanel extends JPanel {
         ageField = new JTextField(5);
         formPanel.add(ageField, gbc);
 
+        // Gender
+        gbc.gridx = 0; gbc.gridy++;
+        formPanel.add(new JLabel("Gender:"), gbc);
+        gbc.gridx = 1;
+        genderComboBox = new JComboBox<>(new String[]{"Male", "Female"});
+        formPanel.add(genderComboBox, gbc);
+
+        // Breed
+        gbc.gridx = 0; gbc.gridy++;
+        formPanel.add(new JLabel("Breed:"), gbc);
+        gbc.gridx = 1; gbc.gridwidth = 2;
+        breedField = new JTextField(15);
+        formPanel.add(breedField, gbc);
+        gbc.gridwidth = 1;
+
+        // Health Status
+        gbc.gridx = 0; gbc.gridy++;
+        formPanel.add(new JLabel("Health Status:"), gbc);
+        gbc.gridx = 1; gbc.gridwidth = 2;
+        healthStatusField = new JTextField(15);
+        formPanel.add(healthStatusField, gbc);
+        gbc.gridwidth = 1;
+
+        // Temperament
+        gbc.gridx = 0; gbc.gridy++;
+        formPanel.add(new JLabel("Temperament:"), gbc);
+        gbc.gridx = 1; gbc.gridwidth = 2;
+        temperamentField = new JTextField(15);
+        formPanel.add(temperamentField, gbc);
+        gbc.gridwidth = 1;
+
         // Status
         gbc.gridx = 0; gbc.gridy++;
         formPanel.add(new JLabel("Status:"), gbc);
         gbc.gridx = 1;
-        statusComboBox = new JComboBox<>(new String[]{"available", "adopted", "pending"}); // Possible statuses
+        statusComboBox = new JComboBox<>(new String[]{"available", "adopted", "pending"});
         formPanel.add(statusComboBox, gbc);
-
 
         // Description
         gbc.gridx = 0; gbc.gridy++;
-        gbc.anchor = GridBagConstraints.NORTHWEST; // Align label top-left
+        gbc.anchor = GridBagConstraints.NORTHWEST;
         formPanel.add(new JLabel("Description:"), gbc);
         gbc.gridx = 1; gbc.gridwidth = 2;
-        gbc.fill = GridBagConstraints.BOTH; // Fill horizontally and vertically
-        gbc.weightx = 1.0; gbc.weighty = 1.0; // Allow area to grow
-        descriptionArea = new JTextArea(4, 15); // Rows, Columns
+        gbc.fill = GridBagConstraints.BOTH;
+        gbc.weightx = 1.0; gbc.weighty = 1.0;
+        descriptionArea = new JTextArea(4, 15);
         descriptionArea.setLineWrap(true);
         descriptionArea.setWrapStyleWord(true);
         JScrollPane descScrollPane = new JScrollPane(descriptionArea);
@@ -210,7 +262,7 @@ public class AdminPetPanel extends JPanel {
         int selectedRow = petTable.getSelectedRow();
         if (selectedRow >= 0) {
             int petId = (int) tableModel.getValueAt(selectedRow, 0);
-            Pet pet = petController.getPetById(petId); // Get full details
+            Pet pet = petController.getPetById(petId);
 
             if (pet != null) {
                 idField.setText(String.valueOf(pet.getPetId()));
@@ -220,126 +272,149 @@ public class AdminPetPanel extends JPanel {
                 ageField.setText(String.valueOf(pet.getAge()));
                 descriptionArea.setText(pet.getDescription());
                 statusComboBox.setSelectedItem(pet.getStatus());
+                genderComboBox.setSelectedItem(pet.getGender());
+                breedField.setText(pet.getBreed());
+                healthStatusField.setText(pet.getHealthStatus());
+                temperamentField.setText(pet.getTemperament());
 
-
-                // Enable Update/Delete buttons
                 updateButton.setEnabled(true);
                 deleteButton.setEnabled(true);
             } else {
-                // Pet not found (shouldn't happen if list is synced)
                 clearForm();
                 JOptionPane.showMessageDialog(this, "Could not find details for selected pet.", "Error", JOptionPane.ERROR_MESSAGE);
             }
         } else {
-            clearForm(); // No row selected
+            clearForm();
+        }
+    }
+
+    private void selectImage() {
+        JFileChooser fileChooser = new JFileChooser();
+        fileChooser.setFileFilter(new javax.swing.filechooser.FileNameExtensionFilter("Image files", "jpg", "jpeg", "png"));
+        
+        int result = fileChooser.showOpenDialog(this);
+        if (result == JFileChooser.APPROVE_OPTION) {
+            selectedImagePath = fileChooser.getSelectedFile().getAbsolutePath();
+            try {
+                // Load and scale the image
+                ImageIcon originalIcon = new ImageIcon(selectedImagePath);
+                Image scaledImage = originalIcon.getImage().getScaledInstance(100, 100, Image.SCALE_SMOOTH);
+                imagePreview.setIcon(new ImageIcon(scaledImage));
+            } catch (Exception e) {
+                JOptionPane.showMessageDialog(this, "Error loading image: " + e.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
+            }
         }
     }
 
     private void clearForm() {
         idField.setText("");
         nameField.setText("");
-        typeComboBox.setSelectedIndex(0); // Reset to first item
+        typeComboBox.setSelectedIndex(0);
         sizeComboBox.setSelectedIndex(0);
         ageField.setText("");
         descriptionArea.setText("");
-        statusComboBox.setSelectedItem("available"); // Default status
+        statusComboBox.setSelectedItem("available");
+        genderComboBox.setSelectedIndex(0);
+        breedField.setText("");
+        healthStatusField.setText("");
+        temperamentField.setText("");
+        imagePreview.setIcon(null);
+        selectedImagePath = null;
 
-        petTable.clearSelection(); // Deselect row in table
-        updateButton.setEnabled(false); // Disable buttons
+        petTable.clearSelection();
+        updateButton.setEnabled(false);
         deleteButton.setEnabled(false);
-        nameField.requestFocus(); // Set focus to name field
+        nameField.requestFocus();
     }
 
     private void addPet() {
-        // Validate Input (Basic)
-        String name = nameField.getText().trim();
-        String ageStr = ageField.getText().trim();
-        String description = descriptionArea.getText().trim();
-
-        if (name.isEmpty()) {
-            JOptionPane.showMessageDialog(this, "Pet name cannot be empty.", "Input Error", JOptionPane.WARNING_MESSAGE);
-            nameField.requestFocus();
-            return;
-        }
-        int age;
         try {
-            age = Integer.parseInt(ageStr);
-            if (age < 0) throw new NumberFormatException();
-        } catch (NumberFormatException ex) {
-            JOptionPane.showMessageDialog(this, "Please enter a valid non-negative age.", "Input Error", JOptionPane.WARNING_MESSAGE);
-            ageField.requestFocus();
-            return;
-        }
+            String name = nameField.getText().trim();
+            String type = (String) typeComboBox.getSelectedItem();
+            String size = (String) sizeComboBox.getSelectedItem();
+            int age = Integer.parseInt(ageField.getText().trim());
+            String description = descriptionArea.getText().trim();
+            String status = (String) statusComboBox.getSelectedItem();
+            String gender = (String) genderComboBox.getSelectedItem();
+            String breed = breedField.getText().trim();
+            String healthStatus = healthStatusField.getText().trim();
+            String temperament = temperamentField.getText().trim();
 
-        // Create Pet object (ID is 0 for new pets, DB assigns it)
-        Pet newPet = new Pet(
-                0,
-                name,
-                (String) typeComboBox.getSelectedItem(),
-                (String) sizeComboBox.getSelectedItem(),
-                age,
-                description,
-                (String) statusComboBox.getSelectedItem() // Use selected status
-        );
+            if (name.isEmpty() || description.isEmpty() || breed.isEmpty() || healthStatus.isEmpty() || temperament.isEmpty()) {
+                JOptionPane.showMessageDialog(this, "Please fill in all fields.", "Error", JOptionPane.ERROR_MESSAGE);
+                return;
+            }
 
-        // Call controller to add
-        boolean success = petController.addPet(newPet);
+            if (selectedImagePath == null) {
+                JOptionPane.showMessageDialog(this, "Please select an image for the pet.", "Error", JOptionPane.ERROR_MESSAGE);
+                return;
+            }
 
-        if (success) {
-            JOptionPane.showMessageDialog(this, "Pet added successfully!", "Success", JOptionPane.INFORMATION_MESSAGE);
-            refreshPetList(); // Refresh table and clear form
-        } else {
-            JOptionPane.showMessageDialog(this, "Failed to add pet. Database error occurred.", "Error", JOptionPane.ERROR_MESSAGE);
+            // Copy image to resources/pets directory
+            String imageName = name.toLowerCase().replaceAll("\\s+", "") + ".jpg";
+            String targetPath = "resources/pets/" + imageName;
+            java.nio.file.Files.copy(
+                java.nio.file.Paths.get(selectedImagePath),
+                java.nio.file.Paths.get(targetPath),
+                java.nio.file.StandardCopyOption.REPLACE_EXISTING
+            );
+
+            Pet newPet = new Pet(0, name, type, size, age, description, status, gender, breed, healthStatus, temperament);
+            if (petController.addPet(newPet)) {
+                JOptionPane.showMessageDialog(this, "Pet added successfully!", "Success", JOptionPane.INFORMATION_MESSAGE);
+                refreshPetList();
+            } else {
+                JOptionPane.showMessageDialog(this, "Failed to add pet.", "Error", JOptionPane.ERROR_MESSAGE);
+            }
+        } catch (NumberFormatException e) {
+            JOptionPane.showMessageDialog(this, "Please enter a valid age.", "Error", JOptionPane.ERROR_MESSAGE);
+        } catch (Exception e) {
+            JOptionPane.showMessageDialog(this, "Error adding pet: " + e.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
         }
     }
 
 
     private void updatePet() {
-        int selectedRow = petTable.getSelectedRow();
-        if (selectedRow < 0 || idField.getText().isEmpty()) {
-            JOptionPane.showMessageDialog(this, "Please select a pet from the list to update.", "No Selection", JOptionPane.WARNING_MESSAGE);
-            return;
-        }
-
-        // Validate Input (similar to add)
-        String name = nameField.getText().trim();
-        String ageStr = ageField.getText().trim();
-        String description = descriptionArea.getText().trim();
-
-        if (name.isEmpty()) {
-            JOptionPane.showMessageDialog(this, "Pet name cannot be empty.", "Input Error", JOptionPane.WARNING_MESSAGE);
-            return;
-        }
-        int age;
-        int petId;
         try {
-            age = Integer.parseInt(ageStr);
-            petId = Integer.parseInt(idField.getText());
-            if (age < 0) throw new NumberFormatException("Invalid age");
-        } catch (NumberFormatException ex) {
-            JOptionPane.showMessageDialog(this, "Please enter a valid non-negative age.", "Input Error", JOptionPane.WARNING_MESSAGE);
-            return;
-        }
+            int petId = Integer.parseInt(idField.getText().trim());
+            String name = nameField.getText().trim();
+            String type = (String) typeComboBox.getSelectedItem();
+            String size = (String) sizeComboBox.getSelectedItem();
+            int age = Integer.parseInt(ageField.getText().trim());
+            String description = descriptionArea.getText().trim();
+            String status = (String) statusComboBox.getSelectedItem();
+            String gender = (String) genderComboBox.getSelectedItem();
+            String breed = breedField.getText().trim();
+            String healthStatus = healthStatusField.getText().trim();
+            String temperament = temperamentField.getText().trim();
 
-        // Create Pet object with existing ID
-        Pet updatedPet = new Pet(
-                petId,
-                name,
-                (String) typeComboBox.getSelectedItem(),
-                (String) sizeComboBox.getSelectedItem(),
-                age,
-                description,
-                (String) statusComboBox.getSelectedItem()
-        );
+            if (name.isEmpty() || description.isEmpty() || breed.isEmpty() || healthStatus.isEmpty() || temperament.isEmpty()) {
+                JOptionPane.showMessageDialog(this, "Please fill in all fields.", "Error", JOptionPane.ERROR_MESSAGE);
+                return;
+            }
 
-        // Call controller to update
-        boolean success = petController.updatePet(updatedPet);
+            // If new image is selected, copy it to resources/pets directory
+            if (selectedImagePath != null) {
+                String imageName = name.toLowerCase().replaceAll("\\s+", "") + ".jpg";
+                String targetPath = "resources/pets/" + imageName;
+                java.nio.file.Files.copy(
+                    java.nio.file.Paths.get(selectedImagePath),
+                    java.nio.file.Paths.get(targetPath),
+                    java.nio.file.StandardCopyOption.REPLACE_EXISTING
+                );
+            }
 
-        if (success) {
-            JOptionPane.showMessageDialog(this, "Pet updated successfully!", "Success", JOptionPane.INFORMATION_MESSAGE);
-            refreshPetList(); // Refresh table and clear form
-        } else {
-            JOptionPane.showMessageDialog(this, "Failed to update pet. Database error occurred.", "Error", JOptionPane.ERROR_MESSAGE);
+            Pet updatedPet = new Pet(petId, name, type, size, age, description, status, gender, breed, healthStatus, temperament);
+            if (petController.updatePet(updatedPet)) {
+                JOptionPane.showMessageDialog(this, "Pet updated successfully!", "Success", JOptionPane.INFORMATION_MESSAGE);
+                refreshPetList();
+            } else {
+                JOptionPane.showMessageDialog(this, "Failed to update pet.", "Error", JOptionPane.ERROR_MESSAGE);
+            }
+        } catch (NumberFormatException e) {
+            JOptionPane.showMessageDialog(this, "Please enter a valid age.", "Error", JOptionPane.ERROR_MESSAGE);
+        } catch (Exception e) {
+            JOptionPane.showMessageDialog(this, "Error updating pet: " + e.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
         }
     }
 
