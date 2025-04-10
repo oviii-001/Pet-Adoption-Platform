@@ -43,7 +43,8 @@ public class Database {
                 gender TEXT,
                 breed TEXT,
                 health_status TEXT,
-                temperament TEXT
+                temperament TEXT,
+                image_data BLOB
             );
 
             CREATE TABLE IF NOT EXISTS Adopter (
@@ -61,7 +62,7 @@ public class Database {
                 FOREIGN KEY (adopter_id) REFERENCES Adopter(adopter_id) ON DELETE CASCADE,
                 FOREIGN KEY (pet_id) REFERENCES Pet(pet_id) ON DELETE CASCADE
             );
-            """; // Using TEXT default values directly
+            """;
 
         try (Connection conn = getConnection();
              Statement stmt = conn.createStatement()) {
@@ -76,16 +77,15 @@ public class Database {
     }
 
     private static void insertSampleData() {
-        // Very basic check to prevent re-inserting every time
         if (getAllPets().isEmpty()) {
             System.out.println("Inserting sample data...");
             try {
                 addPet(new Pet(0, "Buddy", "Dog", "Medium", 3, "Friendly Golden Retriever", "available",
-                    "Male", "Golden Retriever", "Healthy", "Friendly"));
+                    "Male", "Golden Retriever", "Healthy", "Friendly", null));
                 addPet(new Pet(0, "Whiskers", "Cat", "Small", 2, "Shy but sweet tabby", "available",
-                    "Female", "Tabby", "Healthy", "Shy"));
+                    "Female", "Tabby", "Healthy", "Shy", null));
                 addPet(new Pet(0, "Rocky", "Dog", "Large", 5, "Energetic German Shepherd", "available",
-                    "Male", "German Shepherd", "Healthy", "Energetic"));
+                    "Male", "German Shepherd", "Healthy", "Energetic", null));
                 addAdopter(new Adopter(0, "Alice Smith", "alice@email.com", "type:Dog,size:Medium"));
                 System.out.println("Sample data inserted.");
             } catch (SQLException e) {
@@ -117,6 +117,10 @@ public class Database {
              ResultSet rs = stmt.executeQuery(sql)) {
 
             while (rs.next()) {
+                byte[] imageData = rs.getBytes("image_data");
+                System.out.println("Loading pet: " + rs.getString("name") + 
+                                 ", Image data size: " + (imageData != null ? imageData.length + " bytes" : "null"));
+                
                 pets.add(new Pet(
                         rs.getInt("pet_id"),
                         rs.getString("name"),
@@ -128,11 +132,13 @@ public class Database {
                         rs.getString("gender"),
                         rs.getString("breed"),
                         rs.getString("health_status"),
-                        rs.getString("temperament")
+                        rs.getString("temperament"),
+                        imageData
                 ));
             }
         } catch (SQLException e) {
             System.err.println("Error fetching pets: " + e.getMessage());
+            e.printStackTrace();
         }
         return pets;
     }
@@ -156,7 +162,8 @@ public class Database {
                         rs.getString("gender"),
                         rs.getString("breed"),
                         rs.getString("health_status"),
-                        rs.getString("temperament")
+                        rs.getString("temperament"),
+                        rs.getBytes("image_data")
                 ));
             }
         } catch (SQLException e) {
@@ -184,7 +191,8 @@ public class Database {
                         rs.getString("gender"),
                         rs.getString("breed"),
                         rs.getString("health_status"),
-                        rs.getString("temperament")
+                        rs.getString("temperament"),
+                        rs.getBytes("image_data")
                 );
             }
         } catch (SQLException e) {
@@ -194,8 +202,8 @@ public class Database {
     }
 
     public static boolean addPet(Pet pet) throws SQLException {
-        String sql = "INSERT INTO Pet (name, type, size, age, description, status, gender, breed, health_status, temperament) " +
-                    "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+        String sql = "INSERT INTO Pet (name, type, size, age, description, status, gender, breed, health_status, temperament, image_data) " +
+                    "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
         try (Connection conn = getConnection();
              PreparedStatement pstmt = conn.prepareStatement(sql)) {
             pstmt.setString(1, pet.getName());
@@ -208,6 +216,7 @@ public class Database {
             pstmt.setString(8, pet.getBreed());
             pstmt.setString(9, pet.getHealthStatus());
             pstmt.setString(10, pet.getTemperament());
+            pstmt.setBytes(11, pet.getImageData());
             int affectedRows = pstmt.executeUpdate();
             return affectedRows > 0;
         }
@@ -215,7 +224,8 @@ public class Database {
 
     public static boolean updatePet(Pet pet) throws SQLException {
         String sql = "UPDATE Pet SET name = ?, type = ?, size = ?, age = ?, description = ?, status = ?, " +
-                    "gender = ?, breed = ?, health_status = ?, temperament = ? WHERE pet_id = ?";
+                     "gender = ?, breed = ?, health_status = ?, temperament = ?, image_data = ? " +
+                     "WHERE pet_id = ?";
         try (Connection conn = getConnection();
              PreparedStatement pstmt = conn.prepareStatement(sql)) {
             pstmt.setString(1, pet.getName());
@@ -228,7 +238,8 @@ public class Database {
             pstmt.setString(8, pet.getBreed());
             pstmt.setString(9, pet.getHealthStatus());
             pstmt.setString(10, pet.getTemperament());
-            pstmt.setInt(11, pet.getPetId());
+            pstmt.setBytes(11, pet.getImageData());
+            pstmt.setInt(12, pet.getPetId());
             int affectedRows = pstmt.executeUpdate();
             return affectedRows > 0;
         }

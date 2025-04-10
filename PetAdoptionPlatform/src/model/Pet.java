@@ -12,9 +12,10 @@ public class Pet {
     private String breed;
     private String healthStatus;
     private String temperament;
+    private byte[] imageData;
 
     public Pet(int petId, String name, String type, String size, int age, String description, String status,
-              String gender, String breed, String healthStatus, String temperament) {
+              String gender, String breed, String healthStatus, String temperament, byte[] imageData) {
         this.petId = petId;
         this.name = name;
         this.type = type;
@@ -26,6 +27,7 @@ public class Pet {
         this.breed = breed;
         this.healthStatus = healthStatus;
         this.temperament = temperament;
+        this.imageData = imageData;
     }
 
     // Getters
@@ -40,6 +42,7 @@ public class Pet {
     public String getBreed() { return breed; }
     public String getHealthStatus() { return healthStatus; }
     public String getTemperament() { return temperament; }
+    public byte[] getImageData() { return imageData; }
 
     // Setters
     public void setPetId(int petId) { this.petId = petId; }
@@ -53,9 +56,23 @@ public class Pet {
     public void setBreed(String breed) { this.breed = breed; }
     public void setHealthStatus(String healthStatus) { this.healthStatus = healthStatus; }
     public void setTemperament(String temperament) { this.temperament = temperament; }
+    public void setImageData(byte[] imageData) { this.imageData = imageData; }
 
     @Override
     public String toString() {
-        return name + " (" + type + ")"; // Simple representation
+        return "Pet{" +
+                "petId=" + petId +
+                ", name='" + name + '\'' +
+                ", type='" + type + '\'' +
+                ", size='" + size + '\'' +
+                ", age=" + age +
+                ", description='" + description + '\'' +
+                ", status='" + status + '\'' +
+                ", gender='" + gender + '\'' +
+                ", breed='" + breed + '\'' +
+                ", healthStatus='" + healthStatus + '\'' +
+                ", temperament='" + temperament + '\'' +
+                ", imageData=" + (imageData != null ? imageData.length + " bytes" : "null") +
+                '}';
     }
 }

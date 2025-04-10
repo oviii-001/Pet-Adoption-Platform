@@ -4,12 +4,32 @@ import controller.PetController;
 import model.Pet;
 
 import javax.swing.*;
+import javax.swing.border.Border;
+import javax.swing.border.EmptyBorder;
 import javax.swing.event.ListSelectionEvent;
 import javax.swing.event.ListSelectionListener;
 import javax.swing.table.DefaultTableModel;
+import javax.swing.table.JTableHeader;
+import javax.swing.table.TableCellRenderer;
 import java.awt.*;
+import java.awt.event.MouseAdapter;
+import java.awt.event.MouseEvent;
+import java.awt.geom.RoundRectangle2D;
+import java.sql.SQLException;
 import java.util.List;
 import java.util.Vector;
+import javax.swing.filechooser.FileNameExtensionFilter;
+import java.io.File;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.nio.file.StandardCopyOption;
+import java.io.IOException;
+import java.io.ByteArrayOutputStream;
+import java.io.FileInputStream;
+import javax.imageio.ImageIO;
+import java.io.ByteArrayInputStream;
+import java.awt.image.BufferedImage;
 
 public class AdminPetPanel extends JPanel {
     private PetController petController;
@@ -18,8 +38,28 @@ public class AdminPetPanel extends JPanel {
     private DefaultTableModel tableModel;
     private JScrollPane scrollPane;
 
+    // Consistent Colors & Fonts
+    private static final Color PRIMARY_COLOR = new Color(60, 90, 160);
+    private static final Color SECONDARY_COLOR = new Color(230, 126, 34);
+    private static final Color BACKGROUND_COLOR = new Color(248, 249, 250);
+    private static final Color TEXT_COLOR = new Color(52, 73, 94);
+    private static final Color INPUT_BG_COLOR = new Color(255, 255, 255);
+    private static final Color INPUT_BORDER_COLOR = new Color(200, 200, 200);
+    private static final Color TABLE_HEADER_BG = new Color(230, 235, 240);
+    private static final Color TABLE_GRID_COLOR = new Color(210, 210, 210);
+    private static final Color BUTTON_HOVER_COLOR = new Color(45, 75, 140);
+    private static final Color DELETE_BUTTON_COLOR = new Color(210, 50, 50);
+    private static final Color DELETE_BUTTON_HOVER_COLOR = new Color(180, 40, 40);
+
+    private static final Font HEADING_FONT = new Font("Segoe UI Semibold", Font.BOLD, 20);
+    private static final Font LABEL_FONT = new Font("Segoe UI", Font.BOLD, 13);
+    private static final Font INPUT_FONT = new Font("Segoe UI", Font.PLAIN, 14);
+    private static final Font BUTTON_FONT = new Font("Segoe UI", Font.BOLD, 14);
+    private static final Font TABLE_FONT = new Font("Segoe UI", Font.PLAIN, 13);
+    private static final Font TABLE_HEADER_FONT = new Font("Segoe UI Semibold", Font.BOLD, 14);
+
     // Form fields
-    private JTextField idField; // Display only, non-editable
+    private JTextField idField;
     private JTextField nameField;
     private JComboBox<String> typeComboBox;
     private JComboBox<String> sizeComboBox;
@@ -32,276 +72,416 @@ public class AdminPetPanel extends JPanel {
     private JTextField temperamentField;
     private JButton imageButton;
     private JLabel imagePreview;
-    private String selectedImagePath;
+    private byte[] selectedImageData;
 
     // Buttons
     private JButton addButton;
     private JButton updateButton;
     private JButton deleteButton;
-    private JButton clearButton; // Clear form fields
-
+    private JButton clearButton;
 
     public AdminPetPanel(PetController controller) {
         this.petController = controller;
-        setLayout(new BorderLayout(10, 10)); // Add gaps
+        setLayout(new BorderLayout(15, 15)); // Increased gaps
+        setBackground(BACKGROUND_COLOR);
+        setBorder(new EmptyBorder(15, 15, 15, 15)); // Add padding
 
-        // --- Pet List Table ---
-        setupTable();
+        // --- Pet List Table Panel ---
+        JPanel tablePanel = setupTablePanel();
 
-        // --- Pet Details Form ---
-        JPanel formPanel = setupFormPanel();
-
-        // --- Button Panel ---
-        JPanel buttonPanel = setupButtonPanel();
-
+        // --- Pet Details Form & Buttons Panel ---
+        JPanel formAndButtonPanel = setupFormAndButtonPanel();
 
         // --- Layout ---
-        add(scrollPane, BorderLayout.CENTER);
-
-        JPanel eastPanel = new JPanel(new BorderLayout(5,5)); // Panel for form and buttons
-        eastPanel.add(formPanel, BorderLayout.NORTH);
-        eastPanel.add(buttonPanel, BorderLayout.CENTER); // Buttons below form
-
-        add(eastPanel, BorderLayout.EAST);
-        setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10)); // Add padding
-
+        add(tablePanel, BorderLayout.CENTER);
+        add(formAndButtonPanel, BorderLayout.EAST);
 
         // Load initial data
         refreshPetList();
 
         // Add listener for table row selection
-        petTable.getSelectionModel().addListSelectionListener(new ListSelectionListener() {
-            @Override
-            public void valueChanged(ListSelectionEvent e) {
-                if (!e.getValueIsAdjusting() && petTable.getSelectedRow() != -1) {
-                    populateFormFromSelectedRow();
-                }
+        petTable.getSelectionModel().addListSelectionListener(e -> {
+            if (!e.getValueIsAdjusting() && petTable.getSelectedRow() != -1) {
+                populateFormFromSelectedRow();
+                updateButton.setEnabled(true);
+                deleteButton.setEnabled(true);
+            } else if (petTable.getSelectedRow() == -1) {
+                updateButton.setEnabled(false);
+                deleteButton.setEnabled(false);
             }
         });
     }
 
-    private void setupTable() {
-        String[] columnNames = {"ID", "Name", "Type", "Status"}; // Simpler view for admin list
-        tableModel = new DefaultTableModel(columnNames, 0) {
-            @Override
-            public boolean isCellEditable(int row, int column) {
-                return false; // Non-editable
-            }
-        };
-        petTable = new JTable(tableModel);
-        petTable.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
-        petTable.getTableHeader().setReorderingAllowed(false);
-        scrollPane = new JScrollPane(petTable);
-        scrollPane.setPreferredSize(new Dimension(400, 0)); // Give table reasonable initial width
+    private JPanel setupTablePanel() {
+        JPanel panel = new JPanel(new BorderLayout());
+        panel.setBackground(Color.WHITE);
+        panel.setBorder(new RoundedBorder(INPUT_BORDER_COLOR, 1, 15));
+
+        JLabel tableTitle = new JLabel("Manage Pets");
+        tableTitle.setFont(HEADING_FONT);
+        tableTitle.setForeground(PRIMARY_COLOR);
+        tableTitle.setBorder(new EmptyBorder(15, 15, 10, 15));
+        panel.add(tableTitle, BorderLayout.NORTH);
+
+        setupTable(); // Initializes petTable, tableModel, scrollPane
+        panel.add(scrollPane, BorderLayout.CENTER);
+        return panel;
     }
 
-    private JPanel setupFormPanel() {
+    private void setupTable() {
+        String[] columnNames = {"ID", "Name", "Type", "Status", "Age"}; // Added Age
+        tableModel = new DefaultTableModel(columnNames, 0) {
+            @Override
+            public boolean isCellEditable(int row, int column) { return false; }
+        };
+        petTable = new JTable(tableModel);
+        petTable.setFont(TABLE_FONT);
+        petTable.setRowHeight(28);
+        petTable.setGridColor(TABLE_GRID_COLOR);
+        petTable.setShowGrid(true);
+        petTable.setIntercellSpacing(new Dimension(0, 0)); // No internal spacing, use grid
+        petTable.setSelectionBackground(PRIMARY_COLOR.brighter());
+        petTable.setSelectionForeground(Color.WHITE);
+        petTable.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
+
+        JTableHeader header = petTable.getTableHeader();
+        header.setFont(TABLE_HEADER_FONT);
+        header.setBackground(TABLE_HEADER_BG);
+        header.setForeground(TEXT_COLOR);
+        header.setReorderingAllowed(false);
+        header.setPreferredSize(new Dimension(0, 35)); // Header height
+        header.setBorder(BorderFactory.createMatteBorder(0, 0, 1, 0, INPUT_BORDER_COLOR));
+
+        scrollPane = new JScrollPane(petTable);
+        scrollPane.setBorder(BorderFactory.createEmptyBorder(0, 15, 15, 15)); // Padding around table
+        scrollPane.getViewport().setBackground(Color.WHITE); // Background for empty table area
+    }
+
+    private JPanel setupFormAndButtonPanel() {
+        JPanel panel = new JPanel(new BorderLayout(10, 10));
+        panel.setOpaque(false); // Transparent wrapper
+
+        // Form Panel
         JPanel formPanel = new JPanel(new GridBagLayout());
-        formPanel.setBorder(BorderFactory.createTitledBorder("Pet Details"));
+        formPanel.setBackground(Color.WHITE);
+        formPanel.setBorder(BorderFactory.createCompoundBorder(
+            new RoundedBorder(INPUT_BORDER_COLOR, 1, 15),
+            new EmptyBorder(20, 20, 20, 20)
+        ));
         GridBagConstraints gbc = new GridBagConstraints();
-        gbc.insets = new Insets(3, 3, 3, 3);
+        gbc.insets = new Insets(4, 5, 4, 5);
         gbc.anchor = GridBagConstraints.WEST;
-        gbc.fill = GridBagConstraints.HORIZONTAL;
+        int y = 0;
 
-        // Image Selection
-        gbc.gridx = 0; gbc.gridy = 0;
-        formPanel.add(new JLabel("Image:"), gbc);
-        gbc.gridx = 1;
-        JPanel imagePanel = new JPanel(new BorderLayout());
-        imageButton = new JButton("Select Image");
-        imageButton.addActionListener(e -> selectImage());
-        imagePanel.add(imageButton, BorderLayout.WEST);
-        
-        imagePreview = new JLabel();
-        imagePreview.setPreferredSize(new Dimension(100, 100));
-        imagePreview.setBorder(BorderFactory.createLineBorder(Color.LIGHT_GRAY));
-        imagePanel.add(imagePreview, BorderLayout.EAST);
-        formPanel.add(imagePanel, gbc);
+        // Title
+        JLabel formTitle = new JLabel("Pet Details");
+        formTitle.setFont(HEADING_FONT);
+        formTitle.setForeground(PRIMARY_COLOR);
+        gbc.gridx = 0; gbc.gridy = y++; gbc.gridwidth = 2; gbc.anchor = GridBagConstraints.CENTER; gbc.insets = new Insets(0, 0, 15, 0);
+        formPanel.add(formTitle, gbc);
+        gbc.anchor = GridBagConstraints.WEST; gbc.insets = new Insets(4, 5, 4, 5); // Reset
 
-        // ID (Read-only)
-        gbc.gridx = 0; gbc.gridy++;
-        formPanel.add(new JLabel("ID:"), gbc);
-        gbc.gridx = 1;
-        idField = new JTextField(5);
-        idField.setEditable(false);
-        formPanel.add(idField, gbc);
+        // Fields (Label on left, Field on right)
+        idField = createReadOnlyTextField(5);
+        addFormRow(formPanel, gbc, y++, "ID:", idField);
 
-        // Name
-        gbc.gridx = 0; gbc.gridy++;
-        formPanel.add(new JLabel("Name:"), gbc);
-        gbc.gridx = 1; gbc.gridwidth = 2;
-        nameField = new JTextField(15);
-        formPanel.add(nameField, gbc);
-        gbc.gridwidth = 1;
+        nameField = createStyledTextField(15);
+        addFormRow(formPanel, gbc, y++, "Name:", nameField);
 
-        // Type
-        gbc.gridx = 0; gbc.gridy++;
-        formPanel.add(new JLabel("Type:"), gbc);
-        gbc.gridx = 1;
-        typeComboBox = new JComboBox<>(new String[]{"Dog", "Cat", "Other"});
-        formPanel.add(typeComboBox, gbc);
+        typeComboBox = createStyledComboBox(new String[]{"Dog", "Cat", "Other"});
+        addFormRow(formPanel, gbc, y++, "Type:", typeComboBox);
 
-        // Size
-        gbc.gridx = 0; gbc.gridy++;
-        formPanel.add(new JLabel("Size:"), gbc);
-        gbc.gridx = 1;
-        sizeComboBox = new JComboBox<>(new String[]{"Small", "Medium", "Large"});
-        formPanel.add(sizeComboBox, gbc);
+        sizeComboBox = createStyledComboBox(new String[]{"Small", "Medium", "Large"});
+        addFormRow(formPanel, gbc, y++, "Size:", sizeComboBox);
 
-        // Age
-        gbc.gridx = 0; gbc.gridy++;
-        formPanel.add(new JLabel("Age:"), gbc);
-        gbc.gridx = 1;
-        ageField = new JTextField(5);
-        formPanel.add(ageField, gbc);
+        ageField = createStyledTextField(5);
+        addFormRow(formPanel, gbc, y++, "Age:", ageField);
 
-        // Gender
-        gbc.gridx = 0; gbc.gridy++;
-        formPanel.add(new JLabel("Gender:"), gbc);
-        gbc.gridx = 1;
-        genderComboBox = new JComboBox<>(new String[]{"Male", "Female"});
-        formPanel.add(genderComboBox, gbc);
+        genderComboBox = createStyledComboBox(new String[]{"Male", "Female", "Unknown"});
+        addFormRow(formPanel, gbc, y++, "Gender:", genderComboBox);
 
-        // Breed
-        gbc.gridx = 0; gbc.gridy++;
-        formPanel.add(new JLabel("Breed:"), gbc);
-        gbc.gridx = 1; gbc.gridwidth = 2;
-        breedField = new JTextField(15);
-        formPanel.add(breedField, gbc);
-        gbc.gridwidth = 1;
+        breedField = createStyledTextField(15);
+        addFormRow(formPanel, gbc, y++, "Breed:", breedField);
 
-        // Health Status
-        gbc.gridx = 0; gbc.gridy++;
-        formPanel.add(new JLabel("Health Status:"), gbc);
-        gbc.gridx = 1; gbc.gridwidth = 2;
-        healthStatusField = new JTextField(15);
-        formPanel.add(healthStatusField, gbc);
-        gbc.gridwidth = 1;
+        healthStatusField = createStyledTextField(15);
+        addFormRow(formPanel, gbc, y++, "Health:", healthStatusField);
 
-        // Temperament
-        gbc.gridx = 0; gbc.gridy++;
-        formPanel.add(new JLabel("Temperament:"), gbc);
-        gbc.gridx = 1; gbc.gridwidth = 2;
-        temperamentField = new JTextField(15);
-        formPanel.add(temperamentField, gbc);
-        gbc.gridwidth = 1;
+        temperamentField = createStyledTextField(15);
+        addFormRow(formPanel, gbc, y++, "Temper:", temperamentField);
 
-        // Status
-        gbc.gridx = 0; gbc.gridy++;
-        formPanel.add(new JLabel("Status:"), gbc);
-        gbc.gridx = 1;
-        statusComboBox = new JComboBox<>(new String[]{"available", "adopted", "pending"});
-        formPanel.add(statusComboBox, gbc);
+        statusComboBox = createStyledComboBox(new String[]{"available", "adopted", "pending"});
+        addFormRow(formPanel, gbc, y++, "Status:", statusComboBox);
 
-        // Description
-        gbc.gridx = 0; gbc.gridy++;
-        gbc.anchor = GridBagConstraints.NORTHWEST;
-        formPanel.add(new JLabel("Description:"), gbc);
-        gbc.gridx = 1; gbc.gridwidth = 2;
-        gbc.fill = GridBagConstraints.BOTH;
-        gbc.weightx = 1.0; gbc.weighty = 1.0;
-        descriptionArea = new JTextArea(4, 15);
+        // Description Area
+        gbc.gridx = 0; gbc.gridy = y;
+        formPanel.add(createLabel("Desc:"), gbc);
+        gbc.gridx = 1; gbc.gridy = y++; gbc.gridwidth = 1; gbc.fill = GridBagConstraints.HORIZONTAL; gbc.weightx = 1.0;
+        descriptionArea = new JTextArea(3, 15);
+        descriptionArea.setFont(INPUT_FONT);
         descriptionArea.setLineWrap(true);
         descriptionArea.setWrapStyleWord(true);
         JScrollPane descScrollPane = new JScrollPane(descriptionArea);
+        descScrollPane.setBorder(new RoundedBorder(INPUT_BORDER_COLOR, 1, 10));
         formPanel.add(descScrollPane, gbc);
+        gbc.weightx = 0.0; gbc.fill = GridBagConstraints.NONE;
 
-        return formPanel;
+        // Image Selection Section
+        gbc.gridx = 0; gbc.gridy = y; gbc.anchor = GridBagConstraints.NORTHEAST; gbc.insets = new Insets(15, 5, 4, 5); // Add top margin
+        formPanel.add(createLabel("Image:"), gbc);
+
+        gbc.gridx = 1; gbc.gridy = y++; gbc.anchor = GridBagConstraints.WEST; gbc.fill = GridBagConstraints.HORIZONTAL; gbc.insets = new Insets(15, 5, 4, 5);
+        JPanel imageSelectionPanel = new JPanel(new BorderLayout(0, 5)); // Vertical gap
+        imageSelectionPanel.setOpaque(false);
+
+        imageButton = createStyledButton("Choose Image...", PRIMARY_COLOR, BUTTON_HOVER_COLOR); // Use styled button
+        imageButton.setFont(BUTTON_FONT.deriveFont(13f)); // Slightly smaller font
+        imageButton.setBorder(new EmptyBorder(6, 12, 6, 12)); // Adjust padding
+        imageButton.addActionListener(e -> selectImage());
+
+        imagePreview = new JLabel("Click to select image", SwingConstants.CENTER);
+        imagePreview.setFont(INPUT_FONT.deriveFont(Font.ITALIC, 12f));
+        imagePreview.setForeground(TEXT_COLOR.darker());
+        imagePreview.setPreferredSize(new Dimension(120, 120)); // Larger preview area
+        imagePreview.setHorizontalAlignment(SwingConstants.CENTER);
+        imagePreview.setVerticalAlignment(SwingConstants.CENTER);
+        imagePreview.setBorder(BorderFactory.createDashedBorder(INPUT_BORDER_COLOR, 5, 2)); // Dashed border
+        imagePreview.setOpaque(true);
+        imagePreview.setBackground(INPUT_BG_COLOR);
+
+        imageSelectionPanel.add(imageButton, BorderLayout.NORTH);
+        imageSelectionPanel.add(imagePreview, BorderLayout.CENTER);
+        formPanel.add(imageSelectionPanel, gbc);
+
+        // --- Button Panel ---
+        JPanel buttonPanel = setupButtonPanel();
+
+        // --- Layout Form and Buttons ---
+        panel.add(formPanel, BorderLayout.CENTER);
+        panel.add(buttonPanel, BorderLayout.SOUTH);
+
+        return panel;
+    }
+
+    private void addFormRow(JPanel panel, GridBagConstraints gbc, int y, String labelText, JComponent component) {
+        gbc.gridx = 0; gbc.gridy = y;
+        gbc.gridwidth = 1; gbc.weightx = 0.0; gbc.fill = GridBagConstraints.NONE;
+        panel.add(createLabel(labelText), gbc);
+
+        gbc.gridx = 1; gbc.gridy = y;
+        gbc.gridwidth = 1; gbc.weightx = 1.0; gbc.fill = GridBagConstraints.HORIZONTAL;
+        panel.add(component, gbc);
+    }
+
+    private JLabel createLabel(String text) {
+        JLabel label = new JLabel(text);
+        label.setFont(LABEL_FONT);
+        label.setForeground(TEXT_COLOR);
+        return label;
+    }
+
+    private JTextField createStyledTextField(int columns) {
+        JTextField textField = new JTextField(columns);
+        textField.setFont(INPUT_FONT);
+        textField.setBackground(INPUT_BG_COLOR);
+        textField.setForeground(TEXT_COLOR);
+        textField.setBorder(BorderFactory.createCompoundBorder(
+            new RoundedBorder(INPUT_BORDER_COLOR, 1, 10),
+            new EmptyBorder(5, 8, 5, 8) // Padding
+        ));
+        return textField;
+    }
+
+    private JTextField createReadOnlyTextField(int columns) {
+        JTextField textField = createStyledTextField(columns);
+        textField.setEditable(false);
+        textField.setBackground(BACKGROUND_COLOR); // Different background for read-only
+        return textField;
+    }
+
+    private JComboBox<String> createStyledComboBox(String[] items) {
+        JComboBox<String> comboBox = new JComboBox<>(items);
+        comboBox.setFont(INPUT_FONT);
+        comboBox.setBackground(INPUT_BG_COLOR);
+        comboBox.setForeground(TEXT_COLOR);
+        // Basic border for consistency, might need custom renderer for full styling
+        comboBox.setBorder(new RoundedBorder(INPUT_BORDER_COLOR, 1, 10));
+        return comboBox;
     }
 
     private JPanel setupButtonPanel() {
-        JPanel buttonPanel = new JPanel(new FlowLayout(FlowLayout.CENTER)); // Center buttons
-        addButton = new JButton("Add New Pet");
-        updateButton = new JButton("Update Selected Pet");
-        deleteButton = new JButton("Delete Selected Pet");
-        clearButton = new JButton("Clear Form");
+        JPanel buttonPanel = new JPanel(new FlowLayout(FlowLayout.CENTER, 10, 10));
+        buttonPanel.setBackground(Color.WHITE); // Match form background
+        buttonPanel.setBorder(BorderFactory.createMatteBorder(1, 0, 0, 0, INPUT_BORDER_COLOR)); // Top border
 
+        addButton = createStyledButton("Add New", PRIMARY_COLOR, BUTTON_HOVER_COLOR);
+        updateButton = createStyledButton("Update", PRIMARY_COLOR, BUTTON_HOVER_COLOR);
+        deleteButton = createStyledButton("Delete", DELETE_BUTTON_COLOR, DELETE_BUTTON_HOVER_COLOR);
+        clearButton = createStyledButton("Clear", SECONDARY_COLOR, SECONDARY_COLOR.darker());
 
         addButton.addActionListener(e -> addPet());
         updateButton.addActionListener(e -> updatePet());
         deleteButton.addActionListener(e -> deletePet());
         clearButton.addActionListener(e -> clearForm());
 
-
         buttonPanel.add(addButton);
         buttonPanel.add(updateButton);
         buttonPanel.add(deleteButton);
         buttonPanel.add(clearButton);
 
-        // Initially disable update/delete until a row is selected
         updateButton.setEnabled(false);
         deleteButton.setEnabled(false);
-
 
         return buttonPanel;
     }
 
+    private JButton createStyledButton(String text, Color background, Color hover) {
+         JButton button = new JButton(text) {
+            @Override
+            protected void paintComponent(Graphics g) {
+                Graphics2D g2 = (Graphics2D) g.create();
+                g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+                Color bgColor = getBackground();
+                if (getModel().isRollover()) {
+                    bgColor = hover;
+                }
+                if (getModel().isArmed()) {
+                    bgColor = hover.darker();
+                }
+                g2.setColor(bgColor);
+                g2.fillRoundRect(0, 0, getWidth(), getHeight(), 25, 25); // More rounded
+                super.paintComponent(g);
+                g2.dispose();
+            }
+        };
+        button.setFont(BUTTON_FONT);
+        button.setBackground(background);
+        button.setForeground(Color.WHITE);
+        button.setFocusPainted(false);
+        button.setBorder(new EmptyBorder(8, 18, 8, 18));
+        button.setContentAreaFilled(false);
+        button.setOpaque(false);
+        button.setCursor(new Cursor(Cursor.HAND_CURSOR));
+
+        button.addMouseListener(new MouseAdapter() {
+            @Override
+            public void mouseEntered(MouseEvent e) { button.repaint(); }
+            @Override
+            public void mouseExited(MouseEvent e) { button.repaint(); }
+        });
+        return button;
+    }
+    
+    private void styleSmallButton(JButton button) {
+        button.setFont(BUTTON_FONT.deriveFont(12f));
+        button.setBackground(PRIMARY_COLOR);
+        button.setForeground(Color.WHITE);
+        button.setFocusPainted(false);
+        button.setBorder(new EmptyBorder(4, 8, 4, 8));
+        button.setCursor(new Cursor(Cursor.HAND_CURSOR));
+        // Add hover later if needed
+    }
 
     public void refreshPetList() {
-        // Clear existing data
         tableModel.setRowCount(0);
-
-        // Get all pets from controller
         List<Pet> pets = petController.getAllPets();
-
-        // Populate table
         for (Pet pet : pets) {
             Vector<Object> row = new Vector<>();
             row.add(pet.getPetId());
             row.add(pet.getName());
             row.add(pet.getType());
-            row.add(pet.getStatus()); // Show status in the list
+            row.add(pet.getStatus());
+            row.add(pet.getAge()); // Added Age
             tableModel.addRow(row);
         }
-        System.out.println("Admin Pet list refreshed.");
-        clearForm(); // Clear form when list refreshes
+         // Clear selection and form after refresh
+        petTable.clearSelection();
+        clearForm();
     }
-
 
     private void populateFormFromSelectedRow() {
         int selectedRow = petTable.getSelectedRow();
-        if (selectedRow >= 0) {
-            int petId = (int) tableModel.getValueAt(selectedRow, 0);
-            Pet pet = petController.getPetById(petId);
+        if (selectedRow == -1) return;
 
-            if (pet != null) {
-                idField.setText(String.valueOf(pet.getPetId()));
-                nameField.setText(pet.getName());
-                typeComboBox.setSelectedItem(pet.getType());
-                sizeComboBox.setSelectedItem(pet.getSize());
-                ageField.setText(String.valueOf(pet.getAge()));
-                descriptionArea.setText(pet.getDescription());
-                statusComboBox.setSelectedItem(pet.getStatus());
-                genderComboBox.setSelectedItem(pet.getGender());
-                breedField.setText(pet.getBreed());
-                healthStatusField.setText(pet.getHealthStatus());
-                temperamentField.setText(pet.getTemperament());
+        int petId = (int) tableModel.getValueAt(selectedRow, 0);
+        Pet pet = petController.getPetById(petId);
 
-                updateButton.setEnabled(true);
-                deleteButton.setEnabled(true);
-            } else {
-                clearForm();
-                JOptionPane.showMessageDialog(this, "Could not find details for selected pet.", "Error", JOptionPane.ERROR_MESSAGE);
-            }
+        if (pet != null) {
+            idField.setText(String.valueOf(pet.getPetId()));
+            nameField.setText(pet.getName());
+            typeComboBox.setSelectedItem(pet.getType());
+            sizeComboBox.setSelectedItem(pet.getSize());
+            ageField.setText(String.valueOf(pet.getAge()));
+            genderComboBox.setSelectedItem(pet.getGender());
+            breedField.setText(pet.getBreed());
+            healthStatusField.setText(pet.getHealthStatus());
+            temperamentField.setText(pet.getTemperament());
+            statusComboBox.setSelectedItem(pet.getStatus());
+            descriptionArea.setText(pet.getDescription());
+
+            // Set image data from Pet object and update preview
+            selectedImageData = pet.getImageData(); // Store the byte array from DB
+            updateImagePreviewFromData(selectedImageData); // Use method that takes byte[]
+
         } else {
             clearForm();
+            JOptionPane.showMessageDialog(this, "Could not load details for the selected pet.", "Error", JOptionPane.ERROR_MESSAGE);
+        }
+    }
+
+    private void updateImagePreviewFromData(byte[] imageData) {
+        if (imageData != null && imageData.length > 0) {
+            try {
+                // Load image from byte array using ImageIO
+                ByteArrayInputStream bis = new ByteArrayInputStream(imageData);
+                BufferedImage originalImage = ImageIO.read(bis);
+                
+                if (originalImage != null) {
+                    // Scale the image
+                    Image scaledImage = originalImage.getScaledInstance(120, 120, Image.SCALE_SMOOTH);
+                    ImageIcon icon = new ImageIcon(scaledImage);
+                    imagePreview.setIcon(icon);
+                    imagePreview.setText("");
+                    imagePreview.setBorder(new RoundedBorder(INPUT_BORDER_COLOR, 1, 10));
+                } else {
+                    throw new IOException("Failed to read image data");
+                }
+            } catch (Exception ex) {
+                imagePreview.setIcon(null);
+                imagePreview.setText("Preview Error");
+                imagePreview.setBorder(BorderFactory.createDashedBorder(INPUT_BORDER_COLOR, 5, 2));
+                System.err.println("Error loading image preview from data: " + ex.getMessage());
+            }
+        } else {
+            imagePreview.setIcon(null);
+            imagePreview.setText("No Image Set");
+            imagePreview.setBorder(BorderFactory.createDashedBorder(INPUT_BORDER_COLOR, 5, 2));
         }
     }
 
     private void selectImage() {
         JFileChooser fileChooser = new JFileChooser();
-        fileChooser.setFileFilter(new javax.swing.filechooser.FileNameExtensionFilter("Image files", "jpg", "jpeg", "png"));
-        
-        int result = fileChooser.showOpenDialog(this);
-        if (result == JFileChooser.APPROVE_OPTION) {
-            selectedImagePath = fileChooser.getSelectedFile().getAbsolutePath();
-            try {
-                // Load and scale the image
-                ImageIcon originalIcon = new ImageIcon(selectedImagePath);
-                Image scaledImage = originalIcon.getImage().getScaledInstance(100, 100, Image.SCALE_SMOOTH);
-                imagePreview.setIcon(new ImageIcon(scaledImage));
-            } catch (Exception e) {
-                JOptionPane.showMessageDialog(this, "Error loading image: " + e.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
+        fileChooser.setDialogTitle("Select Pet Image");
+        fileChooser.setAcceptAllFileFilterUsed(false);
+        FileNameExtensionFilter filter = new FileNameExtensionFilter("Image Files (JPG, PNG, GIF)", "jpg", "png", "gif");
+        fileChooser.addChoosableFileFilter(filter);
+
+        int returnValue = fileChooser.showOpenDialog(this);
+        if (returnValue == JFileChooser.APPROVE_OPTION) {
+            File selectedFile = fileChooser.getSelectedFile();
+            try (FileInputStream fis = new FileInputStream(selectedFile); 
+                 ByteArrayOutputStream bos = new ByteArrayOutputStream()) {
+                 
+                byte[] buf = new byte[1024];
+                int readNum;
+                while ((readNum = fis.read(buf)) != -1) {
+                    bos.write(buf, 0, readNum);
+                }
+                selectedImageData = bos.toByteArray(); // Store file content as byte array
+                updateImagePreviewFromData(selectedImageData); // Update preview from the new data
+            } catch (IOException e) {
+                selectedImageData = null;
+                updateImagePreviewFromData(null);
+                JOptionPane.showMessageDialog(this, "Error reading image file: " + e.getMessage(), "File Error", JOptionPane.ERROR_MESSAGE);
             }
         }
     }
@@ -312,144 +492,178 @@ public class AdminPetPanel extends JPanel {
         typeComboBox.setSelectedIndex(0);
         sizeComboBox.setSelectedIndex(0);
         ageField.setText("");
-        descriptionArea.setText("");
-        statusComboBox.setSelectedItem("available");
         genderComboBox.setSelectedIndex(0);
         breedField.setText("");
         healthStatusField.setText("");
         temperamentField.setText("");
-        imagePreview.setIcon(null);
-        selectedImagePath = null;
-
-        petTable.clearSelection();
-        updateButton.setEnabled(false);
-        deleteButton.setEnabled(false);
-        nameField.requestFocus();
+        statusComboBox.setSelectedIndex(0);
+        descriptionArea.setText("");
+        selectedImageData = null; // Clear byte array
+        updateImagePreviewFromData(null); // Update preview to show default state
+        petTable.clearSelection(); 
     }
 
     private void addPet() {
         try {
-            String name = nameField.getText().trim();
+            String name = nameField.getText();
             String type = (String) typeComboBox.getSelectedItem();
             String size = (String) sizeComboBox.getSelectedItem();
-            int age = Integer.parseInt(ageField.getText().trim());
-            String description = descriptionArea.getText().trim();
+            int age = Integer.parseInt(ageField.getText());
+            String description = descriptionArea.getText();
             String status = (String) statusComboBox.getSelectedItem();
             String gender = (String) genderComboBox.getSelectedItem();
-            String breed = breedField.getText().trim();
-            String healthStatus = healthStatusField.getText().trim();
-            String temperament = temperamentField.getText().trim();
+            String breed = breedField.getText();
+            String health = healthStatusField.getText();
+            String temper = temperamentField.getText();
 
-            if (name.isEmpty() || description.isEmpty() || breed.isEmpty() || healthStatus.isEmpty() || temperament.isEmpty()) {
-                JOptionPane.showMessageDialog(this, "Please fill in all fields.", "Error", JOptionPane.ERROR_MESSAGE);
-                return;
+            if (name.isEmpty()) {
+                 JOptionPane.showMessageDialog(this, "Pet name cannot be empty.", "Input Error", JOptionPane.WARNING_MESSAGE);
+                 return;
             }
 
-            if (selectedImagePath == null) {
-                JOptionPane.showMessageDialog(this, "Please select an image for the pet.", "Error", JOptionPane.ERROR_MESSAGE);
-                return;
-            }
+            // Use selectedImageData directly
+            Pet newPet = new Pet(0, name, type, size, age, description, status, gender, breed, health, temper, selectedImageData);
+            boolean success = petController.addPet(newPet);
 
-            // Copy image to resources/pets directory
-            String imageName = name.toLowerCase().replaceAll("\\s+", "") + ".jpg";
-            String targetPath = "resources/pets/" + imageName;
-            java.nio.file.Files.copy(
-                java.nio.file.Paths.get(selectedImagePath),
-                java.nio.file.Paths.get(targetPath),
-                java.nio.file.StandardCopyOption.REPLACE_EXISTING
-            );
-
-            Pet newPet = new Pet(0, name, type, size, age, description, status, gender, breed, healthStatus, temperament);
-            if (petController.addPet(newPet)) {
-                JOptionPane.showMessageDialog(this, "Pet added successfully!", "Success", JOptionPane.INFORMATION_MESSAGE);
+            if (success) {
                 refreshPetList();
+                JOptionPane.showMessageDialog(this, "Pet added successfully!", "Success", JOptionPane.INFORMATION_MESSAGE);
             } else {
-                JOptionPane.showMessageDialog(this, "Failed to add pet.", "Error", JOptionPane.ERROR_MESSAGE);
+                JOptionPane.showMessageDialog(this, "Failed to add pet. Check database connection or logs.", "Error", JOptionPane.ERROR_MESSAGE);
             }
         } catch (NumberFormatException e) {
-            JOptionPane.showMessageDialog(this, "Please enter a valid age.", "Error", JOptionPane.ERROR_MESSAGE);
-        } catch (Exception e) {
-            JOptionPane.showMessageDialog(this, "Error adding pet: " + e.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
+            JOptionPane.showMessageDialog(this, "Invalid age format. Please enter a number.", "Input Error", JOptionPane.ERROR_MESSAGE);
         }
     }
-
 
     private void updatePet() {
+        int selectedRow = petTable.getSelectedRow();
+        if (selectedRow == -1) {
+            JOptionPane.showMessageDialog(this, "Please select a pet from the list to update.", "No Selection", JOptionPane.WARNING_MESSAGE);
+            return;
+        }
+
         try {
-            int petId = Integer.parseInt(idField.getText().trim());
-            String name = nameField.getText().trim();
+            int petId = Integer.parseInt(idField.getText());
+            String name = nameField.getText();
             String type = (String) typeComboBox.getSelectedItem();
             String size = (String) sizeComboBox.getSelectedItem();
-            int age = Integer.parseInt(ageField.getText().trim());
-            String description = descriptionArea.getText().trim();
+            int age = Integer.parseInt(ageField.getText());
+            String description = descriptionArea.getText();
             String status = (String) statusComboBox.getSelectedItem();
             String gender = (String) genderComboBox.getSelectedItem();
-            String breed = breedField.getText().trim();
-            String healthStatus = healthStatusField.getText().trim();
-            String temperament = temperamentField.getText().trim();
+            String breed = breedField.getText();
+            String health = healthStatusField.getText();
+            String temper = temperamentField.getText();
 
-            if (name.isEmpty() || description.isEmpty() || breed.isEmpty() || healthStatus.isEmpty() || temperament.isEmpty()) {
-                JOptionPane.showMessageDialog(this, "Please fill in all fields.", "Error", JOptionPane.ERROR_MESSAGE);
-                return;
+             if (name.isEmpty()) {
+                 JOptionPane.showMessageDialog(this, "Pet name cannot be empty.", "Input Error", JOptionPane.WARNING_MESSAGE);
+                 return;
             }
 
-            // If new image is selected, copy it to resources/pets directory
-            if (selectedImagePath != null) {
-                String imageName = name.toLowerCase().replaceAll("\\s+", "") + ".jpg";
-                String targetPath = "resources/pets/" + imageName;
-                java.nio.file.Files.copy(
-                    java.nio.file.Paths.get(selectedImagePath),
-                    java.nio.file.Paths.get(targetPath),
-                    java.nio.file.StandardCopyOption.REPLACE_EXISTING
-                );
-            }
+            // Use selectedImageData if available, otherwise keep existing (handled in controller/DB? No, need to fetch here)
+            byte[] imageDataToSave = null; // Start with null
 
-            Pet updatedPet = new Pet(petId, name, type, size, age, description, status, gender, breed, healthStatus, temperament);
-            if (petController.updatePet(updatedPet)) {
-                JOptionPane.showMessageDialog(this, "Pet updated successfully!", "Success", JOptionPane.INFORMATION_MESSAGE);
+            // Get existing pet data to check current image
+            Pet existingPet = petController.getPetById(petId);
+            byte[] existingImageData = (existingPet != null) ? existingPet.getImageData() : null;
+
+            // selectedImageData holds the data from the form.
+            // If populateFormFromSelectedRow was called, it holds the existing image data.
+            // If selectImage was called after that, it holds the NEW image data.
+            // If clearForm was called, it holds null.
+
+            // We need to know if the data in selectedImageData is DIFFERENT from existingImageData
+            // OR if existingImageData was null and selectedImageData is now populated.
+            // Comparing byte arrays directly with .equals() doesn't work as expected.
+            // A simple check: Is selectedImageData different from the initially populated data?
+
+            // Let's refine: We only want to save selectedImageData IF it was populated by selectImage AFTER populateFormFromSelectedRow.
+            // This state is hard to track. Let's simplify:
+            // If selectedImageData is not null, save it. Otherwise, save the existing data.
+            // This assumes if the user clears the form/image, selectedImageData becomes null.
+
+            if (selectedImageData != null) {
+                 imageDataToSave = selectedImageData;
+            } else if (existingPet != null) {
+                 imageDataToSave = existingPet.getImageData(); // Keep old image if nothing new selected/previewed
+            }
+             // If selectedImageData is null AND existingPet is null/has no image, imageDataToSave remains null.
+            
+            System.out.println("[AdminPetPanel - updatePet] Image data to save length: " + (imageDataToSave != null ? imageDataToSave.length : "null"));
+
+            Pet updatedPet = new Pet(petId, name, type, size, age, description, status, gender, breed, health, temper, imageDataToSave);
+            boolean success = petController.updatePet(updatedPet);
+
+            if (success) {
                 refreshPetList();
+                JOptionPane.showMessageDialog(this, "Pet updated successfully!", "Success", JOptionPane.INFORMATION_MESSAGE);
             } else {
-                JOptionPane.showMessageDialog(this, "Failed to update pet.", "Error", JOptionPane.ERROR_MESSAGE);
+                JOptionPane.showMessageDialog(this, "Failed to update pet. Check database connection or logs.", "Error", JOptionPane.ERROR_MESSAGE);
             }
         } catch (NumberFormatException e) {
-            JOptionPane.showMessageDialog(this, "Please enter a valid age.", "Error", JOptionPane.ERROR_MESSAGE);
-        } catch (Exception e) {
-            JOptionPane.showMessageDialog(this, "Error updating pet: " + e.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
+            JOptionPane.showMessageDialog(this, "Invalid age format. Please enter a number.", "Input Error", JOptionPane.ERROR_MESSAGE);
         }
     }
-
 
     private void deletePet() {
         int selectedRow = petTable.getSelectedRow();
-        if (selectedRow < 0 || idField.getText().isEmpty()) {
+        if (selectedRow == -1) {
             JOptionPane.showMessageDialog(this, "Please select a pet from the list to delete.", "No Selection", JOptionPane.WARNING_MESSAGE);
             return;
         }
 
-        int petId;
-        try {
-            petId = Integer.parseInt(idField.getText());
-        } catch (NumberFormatException ex) {
-            JOptionPane.showMessageDialog(this, "Invalid Pet ID selected.", "Error", JOptionPane.ERROR_MESSAGE);
-            return; // Should not happen if ID field is populated correctly
-        }
-        String petName = nameField.getText(); // Get name for confirmation message
+        int petId = (int) tableModel.getValueAt(selectedRow, 0);
+        String petName = (String) tableModel.getValueAt(selectedRow, 1);
 
-        int confirmation = JOptionPane.showConfirmDialog(this,
-                "Are you sure you want to delete pet '" + petName + "' (ID: " + petId + ")?\nThis action cannot be undone.",
+        int confirm = JOptionPane.showConfirmDialog(this,
+                "Are you sure you want to delete pet: " + petName + " (ID: " + petId + ")?",
                 "Confirm Deletion",
                 JOptionPane.YES_NO_OPTION,
                 JOptionPane.WARNING_MESSAGE);
 
-        if (confirmation == JOptionPane.YES_OPTION) {
-            boolean success = petController.deletePet(petId);
-            if (success) {
-                JOptionPane.showMessageDialog(this, "Pet deleted successfully!", "Success", JOptionPane.INFORMATION_MESSAGE);
-                refreshPetList(); // Refresh table and clear form
-            } else {
-                JOptionPane.showMessageDialog(this, "Failed to delete pet. Check if there are related records (applications) or a database error occurred.", "Error", JOptionPane.ERROR_MESSAGE);
-            }
+        if (confirm == JOptionPane.YES_OPTION) {
+             boolean success = petController.deletePet(petId);
+             if (success) {
+                 refreshPetList(); // Refresh list and clear form
+                 JOptionPane.showMessageDialog(this, "Pet deleted successfully!", "Success", JOptionPane.INFORMATION_MESSAGE);
+             } else {
+                 JOptionPane.showMessageDialog(this, "Failed to delete pet. Check database connection or logs.", "Error", JOptionPane.ERROR_MESSAGE);
+             }
         }
     }
 
+    // Helper class for rounded borders (ensure it's defined or accessible)
+    private static class RoundedBorder implements Border {
+        private Color color;
+        private int thickness;
+        private int radius;
+
+        public RoundedBorder(Color color, int thickness, int radius) {
+            this.color = color;
+            this.thickness = thickness;
+            this.radius = radius;
+        }
+
+        @Override
+        public void paintBorder(Component c, Graphics g, int x, int y, int width, int height) {
+            Graphics2D g2d = (Graphics2D) g.create();
+            g2d.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+            g2d.setColor(color);
+            g2d.setStroke(new BasicStroke(thickness));
+            g2d.draw(new RoundRectangle2D.Double(x + thickness / 2.0, y + thickness / 2.0,
+                                                width - thickness, height - thickness, radius, radius));
+            g2d.dispose();
+        }
+
+        @Override
+        public Insets getBorderInsets(Component c) {
+            return new Insets(thickness, thickness, thickness, thickness);
+        }
+
+        @Override
+        public boolean isBorderOpaque() {
+            return true;
+        }
+    }
 }

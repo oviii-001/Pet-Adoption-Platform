@@ -1,160 +1,234 @@
 package view;
 
 import javax.swing.*;
+import javax.swing.border.Border;
+import javax.swing.border.EmptyBorder;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
-import java.awt.event.MouseListener;
+import java.awt.geom.RoundRectangle2D;
 
 public class LoginPanel extends JPanel {
     private MainFrame mainFrame;
     private JTextField usernameField;
     private JPasswordField passwordField;
-    private JButton loginButton;
+    // Removed loginButton field as it's created and added locally
 
+    // Using admin/admin for simpler testing - CHANGE THIS FOR PRODUCTION
     private static final String ADMIN_USERNAME = "admin";
-    private static final String ADMIN_PASSWORD = "admin123";
+    private static final String ADMIN_PASSWORD = "admin"; // Changed from "admin123"
 
-    // Colors
-    private static final Color PRIMARY_COLOR = new Color(52, 152, 219);
-    private static final Color SECONDARY_COLOR = new Color(231, 76, 60);
-    private static final Color BACKGROUND_COLOR = new Color(240, 240, 240);
-    private static final Color TEXT_COLOR = new Color(44, 62, 80);
+    // Consistent Colors & Fonts from WelcomePanel
+    private static final Color PRIMARY_COLOR = new Color(60, 90, 160); // Deeper Blue
+    private static final Color SECONDARY_COLOR = new Color(230, 126, 34); // Orange accent
+    private static final Color BACKGROUND_COLOR = new Color(248, 249, 250); // Lighter Gray
+    private static final Color TEXT_COLOR = new Color(52, 73, 94); // Dark Gray/Blue
+    private static final Color INPUT_BG_COLOR = new Color(255, 255, 255); // White
+    private static final Color INPUT_BORDER_COLOR = new Color(200, 200, 200); // Light Gray
+    private static final Color BUTTON_HOVER_COLOR = new Color(45, 75, 140); // Darker Blue for Hover
 
-    // Fonts
-    private static final Font TITLE_FONT = new Font("Segoe UI", Font.BOLD, 24);
-    private static final Font LABEL_FONT = new Font("Segoe UI", Font.PLAIN, 14);
-    private static final Font BUTTON_FONT = new Font("Segoe UI", Font.BOLD, 14);
+    private static final Font TITLE_FONT = new Font("Segoe UI Semibold", Font.BOLD, 28);
+    private static final Font LABEL_FONT = new Font("Segoe UI", Font.BOLD, 14);
     private static final Font INPUT_FONT = new Font("Segoe UI", Font.PLAIN, 14);
+    private static final Font BUTTON_FONT = new Font("Segoe UI", Font.BOLD, 16);
 
     public LoginPanel(MainFrame mainFrame) {
         this.mainFrame = mainFrame;
-        setLayout(new BorderLayout());
+        setLayout(new GridBagLayout()); // Use GridBagLayout for the main panel to center content
         setBackground(BACKGROUND_COLOR);
+        setBorder(new EmptyBorder(20, 20, 20, 20));
 
-        // Create a container panel for centering
-        JPanel centerContainer = new JPanel(new GridBagLayout());
-        centerContainer.setBackground(BACKGROUND_COLOR);
+        // Login Form Panel (centered)
+        JPanel loginFormPanel = new JPanel();
+        loginFormPanel.setLayout(new BoxLayout(loginFormPanel, BoxLayout.Y_AXIS));
+        loginFormPanel.setBackground(Color.WHITE); // White background for the form area
+        loginFormPanel.setBorder(BorderFactory.createCompoundBorder(
+            new RoundedBorder(INPUT_BORDER_COLOR, 1, 15), // Rounded border
+            new EmptyBorder(40, 50, 40, 50) // Padding inside
+        ));
+        loginFormPanel.setMaximumSize(new Dimension(400, 400)); // Constrain size
+        loginFormPanel.setPreferredSize(new Dimension(400, 350));
+
+        // Add Title
+        JLabel titleLabel = new JLabel("Administrator Login");
+        titleLabel.setFont(TITLE_FONT);
+        titleLabel.setForeground(PRIMARY_COLOR);
+        titleLabel.setAlignmentX(Component.CENTER_ALIGNMENT);
+        loginFormPanel.add(titleLabel);
+        loginFormPanel.add(Box.createVerticalStrut(30)); // Space after title
+
+        // Username Input Row
+        usernameField = createTextField();
+        loginFormPanel.add(createInputRow("Username", usernameField));
+        loginFormPanel.add(Box.createVerticalStrut(15)); // Space between rows
+
+        // Password Input Row
+        passwordField = createPasswordField();
+        loginFormPanel.add(createInputRow("Password", passwordField));
+        loginFormPanel.add(Box.createVerticalStrut(30)); // Space before button
+
+        // Login Button
+        JButton loginButton = createLoginButton();
+        loginFormPanel.add(loginButton);
+
+        // Add the form panel to the main panel (centered)
         GridBagConstraints gbc = new GridBagConstraints();
         gbc.gridx = 0;
         gbc.gridy = 0;
         gbc.weightx = 1.0;
         gbc.weighty = 1.0;
-        gbc.fill = GridBagConstraints.BOTH;
+        gbc.anchor = GridBagConstraints.CENTER;
+        add(loginFormPanel, gbc);
+    }
 
-        // Create login panel
-        JPanel loginPanel = new JPanel();
-        loginPanel.setLayout(new BoxLayout(loginPanel, BoxLayout.Y_AXIS));
-        loginPanel.setBackground(BACKGROUND_COLOR);
-        loginPanel.setBorder(BorderFactory.createEmptyBorder(20, 20, 20, 20));
-        loginPanel.setMaximumSize(new Dimension(400, 500));
+    private JPanel createInputRow(String labelText, JComponent inputField) {
+        JPanel rowPanel = new JPanel(new BorderLayout(10, 0)); // 10px horizontal gap
+        rowPanel.setBackground(Color.WHITE); // Match form background
+        JLabel label = createLabel(labelText);
+        label.setPreferredSize(new Dimension(80, 30)); // Give label fixed width
+        rowPanel.add(label, BorderLayout.WEST);
+        rowPanel.add(inputField, BorderLayout.CENTER);
+        rowPanel.setAlignmentX(Component.CENTER_ALIGNMENT); // Align row panel itself centrally
+        // Constrain the height of the row panel
+        rowPanel.setMaximumSize(new Dimension(Integer.MAX_VALUE, 45)); 
+        return rowPanel;
+    }
 
-        // Add title
-        JLabel titleLabel = new JLabel("Admin Login");
-        titleLabel.setFont(TITLE_FONT);
-        titleLabel.setForeground(PRIMARY_COLOR);
-        titleLabel.setAlignmentX(Component.CENTER_ALIGNMENT);
-        loginPanel.add(titleLabel);
-        loginPanel.add(Box.createVerticalStrut(30));
+    private JLabel createLabel(String text) {
+        JLabel label = new JLabel(text);
+        label.setFont(LABEL_FONT);
+        label.setForeground(TEXT_COLOR);
+        label.setAlignmentX(Component.LEFT_ALIGNMENT); // Keep label text left-aligned
+        label.setBorder(new EmptyBorder(0, 5, 5, 0));
+        return label;
+    }
 
-        // Add username field
-        JPanel usernamePanel = new JPanel();
-        usernamePanel.setLayout(new BoxLayout(usernamePanel, BoxLayout.X_AXIS));
-        usernamePanel.setBackground(BACKGROUND_COLOR);
-        usernamePanel.setMaximumSize(new Dimension(400, 50));
-        usernamePanel.setAlignmentX(Component.CENTER_ALIGNMENT);
-
-        JLabel usernameLabel = new JLabel("Username:");
-        usernameLabel.setFont(LABEL_FONT);
-        usernameLabel.setForeground(TEXT_COLOR);
-        usernameLabel.setPreferredSize(new Dimension(100, 30));
-        usernamePanel.add(usernameLabel);
-
-        usernameField = new JTextField();
-        usernameField.setFont(INPUT_FONT);
-        usernameField.setMaximumSize(new Dimension(300, 40));
-        usernameField.setBorder(BorderFactory.createCompoundBorder(
-            BorderFactory.createLineBorder(PRIMARY_COLOR, 1),
-            BorderFactory.createEmptyBorder(5, 10, 5, 10)
+    private JTextField createTextField() {
+        JTextField textField = new JTextField();
+        textField.setFont(INPUT_FONT);
+        textField.setBackground(INPUT_BG_COLOR);
+        textField.setForeground(TEXT_COLOR);
+        textField.setBorder(BorderFactory.createCompoundBorder(
+            new RoundedBorder(INPUT_BORDER_COLOR, 1, 10),
+            new EmptyBorder(8, 12, 8, 12)
         ));
-        usernamePanel.add(usernameField);
+        // textField.setMaximumSize(new Dimension(Integer.MAX_VALUE, 40)); // Removed, row controls size
+        // textField.setAlignmentX(Component.CENTER_ALIGNMENT); // Removed, BorderLayout handles alignment
+        return textField;
+    }
 
-        loginPanel.add(usernamePanel);
-        loginPanel.add(Box.createVerticalStrut(20));
-
-        // Add password field
-        JPanel passwordPanel = new JPanel();
-        passwordPanel.setLayout(new BoxLayout(passwordPanel, BoxLayout.X_AXIS));
-        passwordPanel.setBackground(BACKGROUND_COLOR);
-        passwordPanel.setMaximumSize(new Dimension(400, 50));
-        passwordPanel.setAlignmentX(Component.CENTER_ALIGNMENT);
-
-        JLabel passwordLabel = new JLabel("Password:");
-        passwordLabel.setFont(LABEL_FONT);
-        passwordLabel.setForeground(TEXT_COLOR);
-        passwordLabel.setPreferredSize(new Dimension(100, 30));
-        passwordPanel.add(passwordLabel);
-
-        passwordField = new JPasswordField();
+    private JPasswordField createPasswordField() {
+        JPasswordField passwordField = new JPasswordField();
         passwordField.setFont(INPUT_FONT);
-        passwordField.setMaximumSize(new Dimension(300, 40));
+        passwordField.setBackground(INPUT_BG_COLOR);
+        passwordField.setForeground(TEXT_COLOR);
         passwordField.setBorder(BorderFactory.createCompoundBorder(
-            BorderFactory.createLineBorder(PRIMARY_COLOR, 1),
-            BorderFactory.createEmptyBorder(5, 10, 5, 10)
+            new RoundedBorder(INPUT_BORDER_COLOR, 1, 10),
+            new EmptyBorder(8, 12, 8, 12)
         ));
-        passwordPanel.add(passwordField);
+        // passwordField.setMaximumSize(new Dimension(Integer.MAX_VALUE, 40)); // Removed, row controls size
+        // passwordField.setAlignmentX(Component.CENTER_ALIGNMENT); // Removed, BorderLayout handles alignment
+        return passwordField;
+    }
 
-        loginPanel.add(passwordPanel);
-        loginPanel.add(Box.createVerticalStrut(30));
-
-        // Add login button
-        JButton loginButton = new JButton("Login");
-        loginButton.setFont(BUTTON_FONT);
-        loginButton.setBackground(PRIMARY_COLOR);
-        loginButton.setForeground(Color.WHITE);
-        loginButton.setFocusPainted(false);
-        loginButton.setBorder(BorderFactory.createEmptyBorder(10, 30, 10, 30));
-        loginButton.setAlignmentX(Component.CENTER_ALIGNMENT);
-        loginButton.addActionListener(e -> {
-            String username = usernameField.getText();
-            String password = new String(passwordField.getPassword());
-            
-            if (username.equals("admin") && password.equals("admin")) {
-                mainFrame.setAdminMode(true);
-                mainFrame.showPanel("AdminManagePets");
-            } else {
-                JOptionPane.showMessageDialog(this,
-                    "Invalid username or password",
-                    "Login Failed",
-                    JOptionPane.ERROR_MESSAGE);
+    private JButton createLoginButton() {
+         JButton button = new JButton("Login") {
+            @Override
+            protected void paintComponent(Graphics g) {
+                Graphics2D g2 = (Graphics2D) g.create();
+                g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+                if (getModel().isArmed()) {
+                    g2.setColor(BUTTON_HOVER_COLOR.darker());
+                } else if (getModel().isRollover()) {
+                    g2.setColor(BUTTON_HOVER_COLOR);
+                } else {
+                    g2.setColor(getBackground());
+                }
+                g2.fillRoundRect(0, 0, getWidth(), getHeight(), 30, 30); // Rounded corners
+                super.paintComponent(g);
+                g2.dispose();
             }
-        });
+        };
 
-        // Add hover effect
-        loginButton.addMouseListener(new MouseListener() {
+        button.setFont(BUTTON_FONT);
+        button.setBackground(PRIMARY_COLOR);
+        button.setForeground(Color.WHITE);
+        button.setFocusPainted(false);
+        button.setBorder(new EmptyBorder(12, 30, 12, 30)); // Padding
+        button.setContentAreaFilled(false);
+        button.setOpaque(false);
+        button.setAlignmentX(Component.CENTER_ALIGNMENT);
+        button.setMaximumSize(new Dimension(150, 45)); // Control button size
+        button.setPreferredSize(new Dimension(150, 45));
+
+        // Hover effect
+        button.addMouseListener(new MouseAdapter() {
             @Override
             public void mouseEntered(MouseEvent e) {
-                loginButton.setBackground(new Color(41, 128, 185));
+                button.setCursor(new Cursor(Cursor.HAND_CURSOR));
+                button.repaint();
             }
             @Override
             public void mouseExited(MouseEvent e) {
-                loginButton.setBackground(PRIMARY_COLOR);
+                button.setCursor(new Cursor(Cursor.DEFAULT_CURSOR));
+                button.repaint();
             }
-            @Override
-            public void mousePressed(MouseEvent e) {}
-            @Override
-            public void mouseReleased(MouseEvent e) {}
-            @Override
-            public void mouseClicked(MouseEvent e) {}
         });
 
-        loginPanel.add(loginButton);
+        // Action Listener
+        button.addActionListener(e -> {
+            String username = usernameField.getText();
+            String password = new String(passwordField.getPassword());
 
-        // Add login panel to center container
-        centerContainer.add(loginPanel, gbc);
+            if (ADMIN_USERNAME.equals(username) && ADMIN_PASSWORD.equals(password)) {
+                mainFrame.setAdminMode(true); // Set admin mode
+                mainFrame.showPanel("AdminManagePets"); // Show admin dashboard
+            } else {
+                JOptionPane.showMessageDialog(this,
+                    "Invalid username or password. Please try again.",
+                    "Login Failed",
+                    JOptionPane.ERROR_MESSAGE);
+                passwordField.setText(""); // Clear password field on failure
+                usernameField.requestFocusInWindow(); // Focus username field
+            }
+        });
 
-        // Add center container to main panel
-        add(centerContainer, BorderLayout.CENTER);
+        return button;
+    }
+
+    // Reusing RoundedBorder class from WelcomePanel (ensure it's accessible or copy it here)
+    private static class RoundedBorder implements Border {
+        private Color color;
+        private int thickness;
+        private int radius;
+
+        public RoundedBorder(Color color, int thickness, int radius) {
+            this.color = color;
+            this.thickness = thickness;
+            this.radius = radius;
+        }
+
+        @Override
+        public void paintBorder(Component c, Graphics g, int x, int y, int width, int height) {
+            Graphics2D g2d = (Graphics2D) g.create();
+            g2d.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+            g2d.setColor(color);
+            g2d.setStroke(new BasicStroke(thickness));
+            g2d.draw(new RoundRectangle2D.Double(x + thickness / 2.0, y + thickness / 2.0,
+                                                width - thickness, height - thickness, radius, radius));
+            g2d.dispose();
+        }
+
+        @Override
+        public Insets getBorderInsets(Component c) {
+            return new Insets(thickness, thickness, thickness, thickness);
+        }
+
+        @Override
+        public boolean isBorderOpaque() {
+            return true;
+        }
     }
 } 

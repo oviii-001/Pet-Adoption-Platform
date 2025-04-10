@@ -12,11 +12,13 @@ import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
+import java.util.Arrays;
+import java.util.List;
 
 public class MainFrame extends JFrame {
     private CardLayout cardLayout;
     private JPanel mainPanel;
-    private JToggleButton roleToggle;
+    private JButton roleToggle;
     private boolean isAdminMode = false;
     private String previousPanel = null;
     private String currentPanel = "Welcome";
@@ -53,6 +55,9 @@ public class MainFrame extends JFrame {
     private static final Font SUBTITLE_FONT = new Font("Segoe UI", Font.PLAIN, 24);
     private static final Font MENU_FONT = new Font("Segoe UI", Font.PLAIN, 14);
     private static final Font BUTTON_FONT = new Font("Segoe UI", Font.BOLD, 14);
+
+    // List of admin panel names
+    private static final List<String> ADMIN_PANELS = Arrays.asList("AdminManagePets", "AdminManageApplications");
 
     // Getter methods for panels
     public StatusPanel getStatusPanel() {
@@ -191,29 +196,45 @@ public class MainFrame extends JFrame {
 
         menuBar.add(fileMenu);
 
-        // Add role toggle button
-        roleToggle = new JToggleButton("Switch to Admin Mode");
+        // Initial setup for the button (will be updated by showPanel immediately)
+        roleToggle = new JButton("Switch to Admin Mode");
         roleToggle.setFont(BUTTON_FONT);
-        roleToggle.setBackground(SECONDARY_COLOR);
         roleToggle.setForeground(Color.WHITE);
         roleToggle.setBorder(BorderFactory.createEmptyBorder(5, 10, 5, 10));
         roleToggle.setFocusPainted(false);
+        // Initial background color will be set by the first call to showPanel -> updateRoleToggleButtonAppearance
+
         roleToggle.addActionListener(e -> {
-            if (isAdminMode) {
+            String currentText = roleToggle.getText();
+            if ("Switch to Adopter Mode".equals(currentText)) {
+                // Action is to go to Adopter mode/view, regardless of current isAdminMode
+                setAdminMode(false); // Ensure flag is correct
                 showPanel("Welcome");
-                roleToggle.setText("Switch to Adopter Mode");
-                roleToggle.setBackground(PRIMARY_COLOR);
-            } else {
+            } else { // currentText must be "Switch to Admin Mode"
+                // Action is to attempt Admin login
                 showPanel("Login");
-                roleToggle.setText("Switch to Admin Mode");
-                roleToggle.setBackground(SECONDARY_COLOR);
             }
-            isAdminMode = !isAdminMode;
         });
         menuBar.add(Box.createHorizontalGlue());
         menuBar.add(roleToggle);
 
         setJMenuBar(menuBar);
+    }
+
+    // Method to update button appearance based on the panel shown
+    private void updateRoleToggleButtonAppearance(String panelName) {
+        if (roleToggle == null) return;
+
+        if (ADMIN_PANELS.contains(panelName) || panelName.equals("Login")) {
+            // Showing an Admin panel OR the Login panel
+            // In both cases, the alternative action is to go back to Adopter Mode
+            roleToggle.setText("Switch to Adopter Mode");
+            roleToggle.setBackground(PRIMARY_COLOR); // Color reflects target (Adopter)
+        } else {
+            // Showing a non-Admin, non-Login panel (e.g., Welcome, PetBrowse)
+            roleToggle.setText("Switch to Admin Mode");
+            roleToggle.setBackground(SECONDARY_COLOR); // Color reflects target (Admin)
+        }
     }
 
     public void showPanel(String panelName) {
@@ -224,6 +245,8 @@ public class MainFrame extends JFrame {
         cardLayout.show(mainPanel, panelName);
         backButton.setVisible(!panelName.equals("Welcome") && !panelName.equals("Login"));
         System.out.println("Showing panel: " + panelName);
+        // Update the button's appearance whenever a panel is shown
+        updateRoleToggleButtonAppearance(panelName);
     }
 
     public String getCurrentPanelName() {
@@ -232,25 +255,22 @@ public class MainFrame extends JFrame {
 
     public void setAdminMode(boolean isAdminMode) {
         this.isAdminMode = isAdminMode;
-        updateViewForRole();
+        updateViewForRole(); // Update menus based on the new mode
     }
 
+    // This method now only handles UI elements directly tied to the isAdminMode flag (like menus)
     private void updateViewForRole() {
+        // Enable/disable menus based on isAdminMode
         if (adopterMenu != null) {
             adopterMenu.setEnabled(!isAdminMode);
         }
         if (adminMenu != null) {
             adminMenu.setEnabled(isAdminMode);
         }
-        if (roleToggle != null) {
-            roleToggle.setText(isAdminMode ? "Switch to Adopter Mode" : "Switch to Admin Mode");
-            roleToggle.setBackground(isAdminMode ? SECONDARY_COLOR : PRIMARY_COLOR);
-        }
 
-        if (isAdminMode) {
-            showPanel("AdminManagePets");
-        }
+        // Button appearance is handled by updateRoleToggleButtonAppearance via showPanel
 
+        // Refresh panel data if needed (keep this logic)
         if (adminPetPanel != null) adminPetPanel.refreshPetList();
         if (adminApplicationPanel != null) adminApplicationPanel.refreshApplicationList();
         if (statusPanel != null) statusPanel.loadApplications(CURRENT_ADOPTER_ID);
