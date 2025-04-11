@@ -26,50 +26,56 @@ public class Database {
     }
 
     public static void initializeDatabase() {
-        // Combined table creation script
-        String sql = """
-            DROP TABLE IF EXISTS Application;
-            DROP TABLE IF EXISTS Pet;
-            DROP TABLE IF EXISTS Adopter;
-
-            CREATE TABLE IF NOT EXISTS Pet (
-                pet_id INTEGER PRIMARY KEY AUTOINCREMENT,
-                name TEXT NOT NULL,
-                type TEXT,
-                size TEXT,
-                age INTEGER,
-                description TEXT,
-                status TEXT DEFAULT 'available',
-                gender TEXT,
-                breed TEXT,
-                health_status TEXT,
-                temperament TEXT,
-                image_data BLOB
-            );
-
-            CREATE TABLE IF NOT EXISTS Adopter (
-                adopter_id INTEGER PRIMARY KEY AUTOINCREMENT,
-                name TEXT NOT NULL,
-                contact_info TEXT,
-                preferences TEXT
-            );
-
-            CREATE TABLE IF NOT EXISTS Application (
-                application_id INTEGER PRIMARY KEY AUTOINCREMENT,
-                adopter_id INTEGER NOT NULL,
-                pet_id INTEGER NOT NULL,
-                status TEXT DEFAULT 'pending',
-                FOREIGN KEY (adopter_id) REFERENCES Adopter(adopter_id) ON DELETE CASCADE,
-                FOREIGN KEY (pet_id) REFERENCES Pet(pet_id) ON DELETE CASCADE
-            );
-            """;
-
+        // Check if tables exist before creating them
+        String checkTableSql = "SELECT name FROM sqlite_master WHERE type='table' AND name='Pet'";
         try (Connection conn = getConnection();
-             Statement stmt = conn.createStatement()) {
-            // Execute multiple statements if needed (JDBC drivers handle semicolon separation)
-            stmt.executeUpdate(sql); // Use executeUpdate for DDL
-            System.out.println("Database tables checked/created successfully.");
-            insertSampleData(); // Add some initial data
+             Statement stmt = conn.createStatement();
+             ResultSet rs = stmt.executeQuery(checkTableSql)) {
+            
+            // If Pet table doesn't exist, create all tables
+            if (!rs.next()) {
+                System.out.println("Creating database tables for the first time...");
+                String createTablesSql = """
+                    CREATE TABLE IF NOT EXISTS Pet (
+                        pet_id INTEGER PRIMARY KEY AUTOINCREMENT,
+                        name TEXT NOT NULL,
+                        type TEXT,
+                        size TEXT,
+                        age INTEGER,
+                        description TEXT,
+                        status TEXT DEFAULT 'available',
+                        gender TEXT,
+                        breed TEXT,
+                        health_status TEXT,
+                        temperament TEXT,
+                        image_data BLOB
+                    );
+
+                    CREATE TABLE IF NOT EXISTS Adopter (
+                        adopter_id INTEGER PRIMARY KEY AUTOINCREMENT,
+                        name TEXT NOT NULL,
+                        contact_info TEXT,
+                        preferences TEXT
+                    );
+
+                    CREATE TABLE IF NOT EXISTS Application (
+                        application_id INTEGER PRIMARY KEY AUTOINCREMENT,
+                        adopter_id INTEGER NOT NULL,
+                        pet_id INTEGER NOT NULL,
+                        status TEXT DEFAULT 'pending',
+                        FOREIGN KEY (adopter_id) REFERENCES Adopter(adopter_id) ON DELETE CASCADE,
+                        FOREIGN KEY (pet_id) REFERENCES Pet(pet_id) ON DELETE CASCADE
+                    );
+                    """;
+
+                try (Statement createStmt = conn.createStatement()) {
+                    createStmt.executeUpdate(createTablesSql);
+                    System.out.println("Database tables created successfully.");
+                    insertSampleData(); // Add some initial data
+                }
+            } else {
+                System.out.println("Database tables already exist.");
+            }
         } catch (SQLException e) {
             System.err.println("Error initializing database: " + e.getMessage());
             e.printStackTrace();
@@ -77,20 +83,33 @@ public class Database {
     }
 
     private static void insertSampleData() {
-        if (getAllPets().isEmpty()) {
-            System.out.println("Inserting sample data...");
-            try {
-                addPet(new Pet(0, "Buddy", "Dog", "Medium", 3, "Friendly Golden Retriever", "available",
-                    "Male", "Golden Retriever", "Healthy", "Friendly", null));
-                addPet(new Pet(0, "Whiskers", "Cat", "Small", 2, "Shy but sweet tabby", "available",
-                    "Female", "Tabby", "Healthy", "Shy", null));
-                addPet(new Pet(0, "Rocky", "Dog", "Large", 5, "Energetic German Shepherd", "available",
-                    "Male", "German Shepherd", "Healthy", "Energetic", null));
-                addAdopter(new Adopter(0, "Alice Smith", "alice@email.com", "type:Dog,size:Medium"));
-                System.out.println("Sample data inserted.");
-            } catch (SQLException e) {
-                System.err.println("Error inserting sample data: " + e.getMessage());
+        // Check if there are any pets in the database
+        String checkPetsSql = "SELECT COUNT(*) FROM Pet";
+        try (Connection conn = getConnection();
+             Statement stmt = conn.createStatement();
+             ResultSet rs = stmt.executeQuery(checkPetsSql)) {
+            
+            if (rs.next() && rs.getInt(1) == 0) {
+                System.out.println("Adding sample data...");
+                // Sample pets
+                String insertPetsSql = """
+                    INSERT INTO Pet (name, type, size, age, description, status, gender, breed, health_status, temperament)
+                    VALUES 
+                        ('Max', 'Dog', 'Medium', 2, 'Friendly and playful', 'available', 'Male', 'Labrador', 'Healthy', 'Friendly'),
+                        ('Luna', 'Cat', 'Small', 1, 'Calm and affectionate', 'available', 'Female', 'Siamese', 'Healthy', 'Calm'),
+                        ('Rocky', 'Dog', 'Large', 3, 'Energetic and loyal', 'available', 'Male', 'German Shepherd', 'Healthy', 'Energetic');
+                    """;
+
+                try (Statement insertStmt = conn.createStatement()) {
+                    insertStmt.executeUpdate(insertPetsSql);
+                    System.out.println("Sample data added successfully.");
+                }
+            } else {
+                System.out.println("Sample data already exists.");
             }
+        } catch (SQLException e) {
+            System.err.println("Error inserting sample data: " + e.getMessage());
+            e.printStackTrace();
         }
     }
 

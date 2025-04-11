@@ -247,6 +247,11 @@ public class MainFrame extends JFrame {
         System.out.println("Showing panel: " + panelName);
         // Update the button's appearance whenever a panel is shown
         updateRoleToggleButtonAppearance(panelName);
+
+        // Refresh pet list when showing PetBrowse panel
+        if (panelName.equals("PetBrowse") && petBrowsePanel != null) {
+            petBrowsePanel.refreshPetList();
+        }
     }
 
     public String getCurrentPanelName() {
@@ -276,6 +281,7 @@ public class MainFrame extends JFrame {
         if (statusPanel != null) statusPanel.loadApplications(CURRENT_ADOPTER_ID);
         if (preferencesPanel != null) preferencesPanel.loadPreferences(CURRENT_ADOPTER_ID);
         if (matchedPetsPanel != null) matchedPetsPanel.clearMatchedPets();
+        if (petBrowsePanel != null) petBrowsePanel.refreshPetList();
     }
 
     public void navigateToApplicationForm(int petId) {

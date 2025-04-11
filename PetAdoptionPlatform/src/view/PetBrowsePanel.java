@@ -13,6 +13,13 @@ import javax.imageio.ImageIO;
 import java.io.ByteArrayInputStream;
 import java.awt.image.BufferedImage;
 import java.util.stream.Collectors;
+import java.util.function.BiConsumer;
+import java.awt.GridBagConstraints;
+import java.awt.GridBagLayout;
+import java.awt.Insets;
+import java.awt.event.ActionListener;
+import java.awt.event.ActionEvent;
+import javax.swing.border.Border;
 
 public class PetBrowsePanel extends JPanel {
     private MainFrame mainFrame;
@@ -26,9 +33,11 @@ public class PetBrowsePanel extends JPanel {
     private static final Color TEXT_COLOR = new Color(44, 62, 80);
     private static final Color CARD_COLOR = Color.WHITE;
     private static final Color BORDER_COLOR = new Color(200, 200, 200);
+    private static final Color SHADOW_COLOR = new Color(0, 0, 0, 50); // Shadow color
+    private static final Color HOVER_BORDER_COLOR = new Color(52, 152, 219); // Border color on hover
 
     // Fonts
-    private static final Font TITLE_FONT = new Font("Segoe UI", Font.BOLD, 24);
+    private static final Font TITLE_FONT = new Font("Segoe UI", Font.BOLD, 36); // Increased title font size
     private static final Font PET_NAME_FONT = new Font("Segoe UI", Font.BOLD, 18);
     private static final Font PET_INFO_FONT = new Font("Segoe UI", Font.PLAIN, 14);
     private static final Font BUTTON_FONT = new Font("Segoe UI", Font.BOLD, 14);
@@ -61,10 +70,12 @@ public class PetBrowsePanel extends JPanel {
         };
         headerPanel.setBorder(BorderFactory.createEmptyBorder(20, 20, 20, 20));
         headerPanel.setLayout(new BoxLayout(headerPanel, BoxLayout.Y_AXIS));
+        // Ensure header doesn't stretch vertically
+        headerPanel.setMaximumSize(new Dimension(Integer.MAX_VALUE, headerPanel.getPreferredSize().height));
 
         // Add title with shadow effect
         JLabel titleLabel = new JLabel("Available Pets");
-        titleLabel.setFont(new Font("Segoe UI", Font.BOLD, 36));
+        titleLabel.setFont(TITLE_FONT);
         titleLabel.setForeground(Color.WHITE);
         titleLabel.setAlignmentX(Component.CENTER_ALIGNMENT);
         titleLabel.setBorder(BorderFactory.createEmptyBorder(0, 0, 20, 0));
@@ -77,9 +88,10 @@ public class PetBrowsePanel extends JPanel {
 
         // Create pets panel with modern scrollbar
         petsPanel = new JPanel();
-        petsPanel.setLayout(new GridLayout(0, 2, 20, 20)); // 2 columns with gaps
+        // Use GridLayout with 3 columns and increased gaps
+        petsPanel.setLayout(new GridLayout(0, 3, 25, 25));
         petsPanel.setBackground(BACKGROUND_COLOR);
-        petsPanel.setBorder(BorderFactory.createEmptyBorder(20, 20, 20, 20));
+        petsPanel.setBorder(BorderFactory.createEmptyBorder(25, 25, 25, 25)); // Increased padding
 
         JScrollPane scrollPane = new JScrollPane(petsPanel);
         scrollPane.setBorder(null);
@@ -126,55 +138,21 @@ public class PetBrowsePanel extends JPanel {
     private JPanel createFilterPanel() {
         JPanel filterPanel = new JPanel();
         filterPanel.setOpaque(false);
-        filterPanel.setLayout(new BoxLayout(filterPanel, BoxLayout.X_AXIS));
-        filterPanel.setMaximumSize(new Dimension(Integer.MAX_VALUE, 200));
+        filterPanel.setLayout(new FlowLayout(FlowLayout.CENTER, 15, 10));
+        filterPanel.setMaximumSize(new Dimension(Integer.MAX_VALUE, 100));
 
-        // Create filter rows
-        typeComboBox = new JComboBox<>(new String[]{"All", "Dog", "Cat", "Bird"});
-        ageComboBox = new JComboBox<>(new String[]{"All", "Puppy/Kitten", "Young", "Adult", "Senior"});
-        genderComboBox = new JComboBox<>(new String[]{"All", "Male", "Female"});
+        ActionListener filterActionListener = e -> filterPets();
 
-        // Add filter rows to panel
-        JPanel typeRow = createFilterRow("Type:", typeComboBox);
-        JPanel ageRow = createFilterRow("Age:", ageComboBox);
-        JPanel genderRow = createFilterRow("Gender:", genderComboBox);
+        typeComboBox = new JComboBox<>(new String[]{"All Types", "Dog", "Cat", "Bird", "Other"});
+        typeComboBox.addActionListener(filterActionListener);
+        ageComboBox = new JComboBox<>(new String[]{"All Ages", "Puppy/Kitten", "Young", "Adult", "Senior"});
+        ageComboBox.addActionListener(filterActionListener);
+        genderComboBox = new JComboBox<>(new String[]{"All Genders", "Male", "Female"});
+        genderComboBox.addActionListener(filterActionListener);
 
-        filterPanel.add(typeRow);
-        filterPanel.add(Box.createHorizontalStrut(20));
-        filterPanel.add(ageRow);
-        filterPanel.add(Box.createHorizontalStrut(20));
-        filterPanel.add(genderRow);
-
-        // Add filter button with modern styling
-        JButton filterButton = new JButton("Filter");
-        filterButton.setFont(new Font("Segoe UI", Font.BOLD, 14));
-        filterButton.setBackground(new Color(46, 204, 113));
-        filterButton.setForeground(Color.WHITE);
-        filterButton.setFocusPainted(false);
-        filterButton.setBorder(BorderFactory.createCompoundBorder(
-            BorderFactory.createLineBorder(new Color(39, 174, 96), 1),
-            BorderFactory.createEmptyBorder(8, 20, 8, 20)
-        ));
-        filterButton.setMaximumSize(new Dimension(120, 40));
-        filterButton.addActionListener(e -> {
-            filterPets();
-        });
-
-        // Add hover effect
-        filterButton.addMouseListener(new MouseAdapter() {
-            @Override
-            public void mouseEntered(MouseEvent e) {
-                filterButton.setBackground(new Color(39, 174, 96));
-            }
-            @Override
-            public void mouseExited(MouseEvent e) {
-                filterButton.setBackground(new Color(46, 204, 113));
-            }
-        });
-
-        // Add button next to gender dropdown
-        filterPanel.add(Box.createHorizontalStrut(20));
-        filterPanel.add(filterButton);
+        filterPanel.add(createFilterRow("Type:", typeComboBox));
+        filterPanel.add(createFilterRow("Age:", ageComboBox));
+        filterPanel.add(createFilterRow("Gender:", genderComboBox));
 
         return filterPanel;
     }
@@ -182,45 +160,50 @@ public class PetBrowsePanel extends JPanel {
     private JPanel createFilterRow(String labelText, JComboBox<String> comboBox) {
         JPanel rowPanel = new JPanel();
         rowPanel.setOpaque(false);
-        rowPanel.setLayout(new BoxLayout(rowPanel, BoxLayout.Y_AXIS));
-        rowPanel.setAlignmentX(Component.LEFT_ALIGNMENT);
-        rowPanel.setMaximumSize(new Dimension(200, 80));
+        // Use FlowLayout for simple horizontal arrangement
+        rowPanel.setLayout(new FlowLayout(FlowLayout.LEFT, 5, 0));
+        // Remove fixed size constraints to allow FlowLayout to manage size
+        // rowPanel.setMaximumSize(new Dimension(200, 80));
 
         // Create label with improved styling
         JLabel label = new JLabel(labelText);
-        label.setFont(new Font("Segoe UI", Font.BOLD, 16));
-        label.setForeground(new Color(255, 255, 255));
-        label.setBackground(new Color(52, 152, 219, 150));
-        label.setOpaque(true);
-        label.setBorder(BorderFactory.createEmptyBorder(5, 10, 5, 10));
-        label.setAlignmentX(Component.LEFT_ALIGNMENT);
+        label.setFont(new Font("Segoe UI", Font.BOLD, 14)); // Slightly smaller font
+        label.setForeground(Color.WHITE); // Label color on gradient
+        // Make label background transparent
+        // label.setBackground(new Color(52, 152, 219, 150));
+        // label.setOpaque(true);
+        label.setBorder(BorderFactory.createEmptyBorder(5, 0, 5, 5)); // Adjust padding
+        // label.setAlignmentX(Component.LEFT_ALIGNMENT); // Not needed with FlowLayout
         rowPanel.add(label);
-        rowPanel.add(Box.createVerticalStrut(5));
+        // rowPanel.add(Box.createVerticalStrut(5)); // Not needed with FlowLayout
 
         // Style combo box
         comboBox.setFont(new Font("Segoe UI", Font.PLAIN, 14));
-        comboBox.setBackground(new Color(255, 255, 255));
-        comboBox.setForeground(new Color(44, 62, 80));
+        comboBox.setBackground(Color.WHITE); // White background
+        comboBox.setForeground(TEXT_COLOR);
         comboBox.setBorder(BorderFactory.createCompoundBorder(
-            BorderFactory.createLineBorder(new Color(52, 152, 219)),
+            BorderFactory.createLineBorder(new Color(180, 180, 180)), // Lighter border
             BorderFactory.createEmptyBorder(5, 10, 5, 10)
         ));
-        comboBox.setMaximumSize(new Dimension(200, 35));
+        comboBox.setPreferredSize(new Dimension(150, 35)); // Set preferred size
+        // comboBox.setMaximumSize(new Dimension(200, 35)); // Remove max size
         comboBox.setFocusable(false);
-        comboBox.setAlignmentX(Component.LEFT_ALIGNMENT);
-        
-        // Add hover effect
+        // comboBox.setAlignmentX(Component.LEFT_ALIGNMENT); // Not needed with FlowLayout
+
+        // Add hover effect (optional, can be distracting on combo boxes)
+        /*
         comboBox.addMouseListener(new MouseAdapter() {
             @Override
             public void mouseEntered(MouseEvent e) {
-                comboBox.setBackground(new Color(245, 245, 245));
+                // comboBox.setBackground(new Color(245, 245, 245));
             }
             @Override
             public void mouseExited(MouseEvent e) {
-                comboBox.setBackground(new Color(255, 255, 255));
+                // comboBox.setBackground(Color.WHITE);
             }
         });
-        
+        */
+
         rowPanel.add(comboBox);
 
         return rowPanel;
@@ -243,7 +226,8 @@ public class PetBrowsePanel extends JPanel {
             for (Pet pet : pets) {
                 System.out.println("DEBUG: Creating card for pet: " + pet.getName());
                 JPanel card = createPetCard(pet);
-                card.setPreferredSize(new Dimension(450, 350));
+                // Removed fixed PreferredSize to allow GridLayout to manage size
+                // card.setPreferredSize(new Dimension(450, 350));
                 petsPanel.add(card);
             }
         }
@@ -273,9 +257,9 @@ public class PetBrowsePanel extends JPanel {
         
         // Filter pets based on selected criteria
         List<Pet> filteredPets = petController.getAllPets().stream()
-            .filter(pet -> selectedType.equals("All") || pet.getType().equals(selectedType))
-            .filter(pet -> selectedAge.equals("All") || matchesAgeCategory(pet.getAge(), selectedAge))
-            .filter(pet -> selectedGender.equals("All") || pet.getGender().equals(selectedGender))
+            .filter(pet -> selectedType.equals("All Types") || pet.getType().equals(selectedType))
+            .filter(pet -> selectedAge.equals("All Ages") || matchesAgeCategory(pet.getAge(), selectedAge))
+            .filter(pet -> selectedGender.equals("All Genders") || pet.getGender().equals(selectedGender))
             .collect(Collectors.toList());
         
         // Add filtered pets to panel
@@ -310,259 +294,203 @@ public class PetBrowsePanel extends JPanel {
     }
 
     private JPanel createPetCard(Pet pet) {
-        System.out.println("\nDEBUG: ===== Creating card for pet: " + pet.getName() + " =====");
-        JPanel card = new JPanel();
-        card.setLayout(new BorderLayout());
-        card.setBackground(CARD_COLOR);
+        JPanel card = new JPanel(new GridBagLayout());
+        card.setBackground(Color.WHITE);
         card.setBorder(BorderFactory.createCompoundBorder(
-            BorderFactory.createLineBorder(BORDER_COLOR, 1),
-            BorderFactory.createEmptyBorder(10, 10, 10, 10)
+                BorderFactory.createLineBorder(new Color(200, 200, 200), 1),
+                BorderFactory.createEmptyBorder(10, 10, 10, 10)
         ));
-        card.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
+        card.setPreferredSize(new Dimension(250, 350));
 
-        // Image panel
-        JPanel imagePanel = new JPanel(new BorderLayout());
-        imagePanel.setBackground(CARD_COLOR);
-        imagePanel.setPreferredSize(new Dimension(200, 200));
-        imagePanel.setBorder(BorderFactory.createLineBorder(BORDER_COLOR, 1));
+        // Add shadow effect
+        card.addMouseListener(new MouseAdapter() {
+            @Override
+            public void mouseEntered(MouseEvent e) {
+                card.setBorder(BorderFactory.createCompoundBorder(
+                        BorderFactory.createLineBorder(new Color(150, 150, 150), 1),
+                        BorderFactory.createEmptyBorder(10, 10, 10, 10)
+                ));
+            }
+
+            @Override
+            public void mouseExited(MouseEvent e) {
+                card.setBorder(BorderFactory.createCompoundBorder(
+                        BorderFactory.createLineBorder(new Color(200, 200, 200), 1),
+                        BorderFactory.createEmptyBorder(10, 10, 10, 10)
+                ));
+            }
+        });
+
+        GridBagConstraints gbc = new GridBagConstraints();
+        gbc.gridx = 0;
+        gbc.gridy = 0;
+        gbc.weightx = 1.0;
+        gbc.fill = GridBagConstraints.HORIZONTAL;
+        gbc.insets = new Insets(0, 0, 10, 0);
 
         JLabel imageLabel = new JLabel();
         imageLabel.setHorizontalAlignment(JLabel.CENTER);
         imageLabel.setVerticalAlignment(JLabel.CENTER);
-        imageLabel.setPreferredSize(new Dimension(200, 200));
-        
+        imageLabel.setOpaque(true);
+        imageLabel.setBackground(new Color(220, 220, 220));
+        imageLabel.setPreferredSize(new Dimension(200, 150));
+        imageLabel.setMinimumSize(new Dimension(150, 120));
+        imageLabel.setBorder(BorderFactory.createLineBorder(BORDER_COLOR));
+        imageLabel.setText("Image loading...");
+
         if (pet.getImageData() != null && pet.getImageData().length > 0) {
-            ByteArrayInputStream bis = null;
             try {
-                System.out.println("DEBUG: Starting image load for pet: " + pet.getName());
-                System.out.println("DEBUG: Image data size: " + pet.getImageData().length + " bytes");
-                
-                // Check if the image data starts with valid image magic numbers
-                byte[] header = new byte[4];
-                System.arraycopy(pet.getImageData(), 0, header, 0, Math.min(4, pet.getImageData().length));
-                System.out.println("DEBUG: First few bytes: " + 
-                    String.format("%02X %02X %02X %02X", header[0], header[1], header[2], header[3]));
-                
-                // Common image format magic numbers
-                System.out.println("DEBUG: Checking image format...");
-                if (header[0] == (byte)0xFF && header[1] == (byte)0xD8) {
-                    System.out.println("DEBUG: Image appears to be JPEG");
-                } else if (header[0] == (byte)0x89 && header[1] == (byte)0x50) {
-                    System.out.println("DEBUG: Image appears to be PNG");
-                } else if (header[0] == (byte)0x47 && header[1] == (byte)0x49) {
-                    System.out.println("DEBUG: Image appears to be GIF");
-                } else {
-                    System.out.println("DEBUG: Unknown image format");
-                }
-                
-                bis = new ByteArrayInputStream(pet.getImageData());
-                System.out.println("DEBUG: Created ByteArrayInputStream");
-                
+                ByteArrayInputStream bis = new ByteArrayInputStream(pet.getImageData());
                 BufferedImage originalImage = ImageIO.read(bis);
-                System.out.println("DEBUG: Called ImageIO.read");
-                
                 if (originalImage != null) {
-                    System.out.println("DEBUG: Image loaded successfully");
-                    System.out.println("DEBUG: Original dimensions - Width: " + originalImage.getWidth() + 
-                                     ", Height: " + originalImage.getHeight() +
-                                     ", Type: " + originalImage.getType());
+                    int labelWidth = 200;
+                    int labelHeight = 150;
+
+                    // Calculate dimensions for cropping
+                    double originalRatio = (double) originalImage.getWidth() / originalImage.getHeight();
+                    double targetRatio = (double) labelWidth / labelHeight;
                     
-                    // Calculate dimensions maintaining aspect ratio
-                    int targetWidth = 200;
-                    int targetHeight = 200;
+                    int cropWidth;
+                    int cropHeight;
+                    int x = 0;
+                    int y = 0;
                     
-                    double aspectRatio = (double) originalImage.getWidth() / originalImage.getHeight();
-                    System.out.println("DEBUG: Aspect ratio: " + aspectRatio);
-                    
-                    if (aspectRatio > 1) {
-                        // Image is wider than tall
-                        targetHeight = (int) (targetWidth / aspectRatio);
+                    if (originalRatio > targetRatio) {
+                        // Original image is wider - crop width
+                        cropHeight = originalImage.getHeight();
+                        cropWidth = (int) (cropHeight * targetRatio);
+                        x = (originalImage.getWidth() - cropWidth) / 2;
                     } else {
-                        // Image is taller than wide
-                        targetWidth = (int) (targetHeight * aspectRatio);
+                        // Original image is taller - crop height
+                        cropWidth = originalImage.getWidth();
+                        cropHeight = (int) (cropWidth / targetRatio);
+                        y = (originalImage.getHeight() - cropHeight) / 2;
                     }
+
+                    // Crop the image
+                    BufferedImage croppedImage = originalImage.getSubimage(x, y, cropWidth, cropHeight);
                     
-                    System.out.println("DEBUG: Target dimensions - Width: " + targetWidth + 
-                                     ", Height: " + targetHeight);
+                    // Scale the cropped image to fit the label exactly
+                    Image scaledImage = croppedImage.getScaledInstance(labelWidth, labelHeight, Image.SCALE_SMOOTH);
                     
-                    // Create a new BufferedImage with the correct type and dimensions
-                    BufferedImage scaledImage = new BufferedImage(200, 200, BufferedImage.TYPE_INT_ARGB);
-                    Graphics2D g2d = scaledImage.createGraphics();
-                    try {
-                        // Set background to white
-                        g2d.setColor(Color.WHITE);
-                        g2d.fillRect(0, 0, 200, 200);
-                        
-                        // Calculate position to center the image
-                        int x = (200 - targetWidth) / 2;
-                        int y = (200 - targetHeight) / 2;
-                        
-                        System.out.println("DEBUG: Drawing position - X: " + x + ", Y: " + y);
-                        
-                        // Set rendering hints for better quality
-                        g2d.setRenderingHint(RenderingHints.KEY_INTERPOLATION, RenderingHints.VALUE_INTERPOLATION_BICUBIC);
-                        g2d.setRenderingHint(RenderingHints.KEY_RENDERING, RenderingHints.VALUE_RENDER_QUALITY);
-                        g2d.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
-                        
-                        // Draw the scaled image
-                        g2d.drawImage(originalImage, x, y, targetWidth, targetHeight, null);
-                        System.out.println("DEBUG: Image drawn successfully");
-                        
-                        // Create ImageIcon and verify it's not null
-                        ImageIcon icon = new ImageIcon(scaledImage);
-                        System.out.println("DEBUG: Created ImageIcon - Width: " + icon.getIconWidth() + 
-                                         ", Height: " + icon.getIconHeight());
-                        
-                        if (icon.getIconWidth() <= 0 || icon.getIconHeight() <= 0) {
-                            throw new IllegalStateException("Created ImageIcon has invalid dimensions");
-                        }
-                        
-                        imageLabel.setIcon(icon);
-                        System.out.println("DEBUG: Icon set on label successfully");
-                        
-                        // Force the image label to update
-                        imageLabel.validate();
-                        imageLabel.repaint();
-                        System.out.println("DEBUG: Image label updated");
-                        
-                        System.out.println("DEBUG: ===== Image loading complete =====\n");
-                    } finally {
-                        g2d.dispose(); // Ensure graphics context is disposed
-                        System.out.println("DEBUG: Graphics context disposed");
-                    }
+                    ImageIcon icon = new ImageIcon(scaledImage);
+                    imageLabel.setIcon(icon);
+                    imageLabel.setText(null);
+                    imageLabel.setBackground(CARD_COLOR);
                 } else {
-                    System.err.println("ERROR: ImageIO.read returned null for pet: " + pet.getName());
-                    imageLabel.setText("Image Error");
-                    imageLabel.setForeground(TEXT_COLOR);
+                    imageLabel.setText("Invalid image");
                 }
-            } catch (Exception ex) {
-                System.err.println("\nERROR: Failed to load image for pet: " + pet.getName());
-                System.err.println("ERROR: Exception type: " + ex.getClass().getName());
-                System.err.println("ERROR: Message: " + ex.getMessage());
-                ex.printStackTrace();
-                imageLabel.setText("Image Error");
-                imageLabel.setForeground(TEXT_COLOR);
-            } finally {
-                if (bis != null) {
-                    try {
-                        bis.close();
-                        System.out.println("DEBUG: ByteArrayInputStream closed");
-                    } catch (IOException e) {
-                        System.err.println("ERROR: Failed to close ByteArrayInputStream: " + e.getMessage());
-                    }
-                }
+                bis.close();
+            } catch (IOException e) {
+                e.printStackTrace();
+                imageLabel.setText("Image error");
             }
         } else {
-            System.out.println("\nDEBUG: No image data for pet: " + pet.getName() + 
-                             ", imageData is " + (pet.getImageData() == null ? "null" : "empty"));
-            imageLabel.setText("No Image");
-            imageLabel.setForeground(TEXT_COLOR);
+            imageLabel.setText("No image");
         }
 
-        imagePanel.add(imageLabel, BorderLayout.CENTER);
-        card.add(imagePanel, BorderLayout.CENTER);
-
-        // Details panel
-        JPanel detailsPanel = new JPanel(new GridBagLayout());
-        detailsPanel.setBackground(CARD_COLOR);
-        GridBagConstraints gbc = new GridBagConstraints();
-        gbc.anchor = GridBagConstraints.WEST;
-        gbc.insets = new Insets(5, 5, 5, 5);
-
-        // Name
-        gbc.gridx = 0; gbc.gridy = 0;
-        JLabel nameLabel = new JLabel(pet.getName());
-        nameLabel.setFont(PET_NAME_FONT);
-        nameLabel.setForeground(PRIMARY_COLOR);
-        detailsPanel.add(nameLabel, gbc);
-
-        // Type and Age
-        gbc.gridy++;
-        JLabel typeAgeLabel = new JLabel(pet.getType() + " • " + pet.getAge() + " years");
-        typeAgeLabel.setFont(PET_INFO_FONT);
-        typeAgeLabel.setForeground(TEXT_COLOR);
-        detailsPanel.add(typeAgeLabel, gbc);
-
-        // Breed
-        gbc.gridy++;
-        JLabel breedLabel = new JLabel("Breed: " + pet.getBreed());
-        breedLabel.setFont(PET_INFO_FONT);
-        breedLabel.setForeground(TEXT_COLOR);
-        detailsPanel.add(breedLabel, gbc);
-
-        // Gender
-        gbc.gridy++;
-        JLabel genderLabel = new JLabel("Gender: " + pet.getGender());
-        genderLabel.setFont(PET_INFO_FONT);
-        genderLabel.setForeground(TEXT_COLOR);
-        detailsPanel.add(genderLabel, gbc);
-
-        // Health Status
-        gbc.gridy++;
-        JLabel healthLabel = new JLabel("Health: " + pet.getHealthStatus());
-        healthLabel.setFont(PET_INFO_FONT);
-        healthLabel.setForeground(TEXT_COLOR);
-        detailsPanel.add(healthLabel, gbc);
-
-        // Temperament
-        gbc.gridy++;
-        JLabel tempLabel = new JLabel("Temperament: " + pet.getTemperament());
-        tempLabel.setFont(PET_INFO_FONT);
-        tempLabel.setForeground(TEXT_COLOR);
-        detailsPanel.add(tempLabel, gbc);
-
-        // Description
-        gbc.gridy++;
-        JTextArea descArea = new JTextArea(pet.getDescription());
-        descArea.setFont(PET_INFO_FONT);
-        descArea.setLineWrap(true);
-        descArea.setWrapStyleWord(true);
-        descArea.setEditable(false);
-        descArea.setBackground(CARD_COLOR);
-        descArea.setForeground(TEXT_COLOR);
-        descArea.setPreferredSize(new Dimension(300, 60));
-        detailsPanel.add(descArea, gbc);
-
-        // Apply button
-        gbc.gridy++;
-        gbc.anchor = GridBagConstraints.EAST;
-        gbc.gridwidth = GridBagConstraints.REMAINDER;
+        gbc.gridx = 0;
+        gbc.gridy = 0;
+        gbc.gridwidth = 2;
+        gbc.weighty = 0.0;
         gbc.fill = GridBagConstraints.HORIZONTAL;
-        gbc.weightx = 1.0;
-        
-        JButton applyButton = new JButton("Apply to Adopt");
+        gbc.anchor = GridBagConstraints.CENTER;
+        card.add(imageLabel, gbc);
+
+        // Pet name (centered below image)
+        gbc.gridy++;
+        gbc.insets = new Insets(10, 0, 10, 0);
+        JLabel nameLabel = new JLabel(pet.getName());
+        nameLabel.setFont(new Font("Segoe UI", Font.BOLD, 18));
+        nameLabel.setHorizontalAlignment(SwingConstants.CENTER);
+        nameLabel.setAlignmentX(Component.CENTER_ALIGNMENT);
+        card.add(nameLabel, gbc);
+
+        JPanel infoPanel = new JPanel(new GridBagLayout());
+        infoPanel.setOpaque(false);
+        GridBagConstraints infoGBC = new GridBagConstraints();
+        infoGBC.anchor = GridBagConstraints.LINE_START;
+        infoGBC.insets = new Insets(1, 5, 1, 5);
+
+        BiConsumer<String, String> addInfoRow = (labelText, valueText) -> {
+            JLabel label = new JLabel(labelText);
+            label.setFont(PET_INFO_FONT.deriveFont(Font.BOLD));
+            label.setForeground(TEXT_COLOR.darker());
+            infoGBC.gridx = 0;
+            infoGBC.gridy++;
+            infoGBC.weightx = 0.0;
+            infoGBC.fill = GridBagConstraints.NONE;
+            infoPanel.add(label, infoGBC);
+
+            JLabel value = new JLabel(valueText);
+            value.setFont(PET_INFO_FONT);
+            value.setForeground(TEXT_COLOR);
+            infoGBC.gridx = 1;
+            infoGBC.weightx = 1.0;
+            infoGBC.fill = GridBagConstraints.HORIZONTAL;
+            infoPanel.add(value, infoGBC);
+        };
+
+        addInfoRow.accept("Breed:", pet.getBreed());
+        addInfoRow.accept("Age:", String.valueOf(pet.getAge()) + " (" + getAgeCategory(pet.getAge()) + ")");
+        addInfoRow.accept("Gender:", pet.getGender());
+        addInfoRow.accept("Status:", pet.getStatus());
+
+        gbc.gridx = 0;
+        gbc.gridy++;
+        gbc.gridwidth = 2;
+        gbc.weighty = 1.0;
+        gbc.fill = GridBagConstraints.BOTH;
+        card.add(infoPanel, gbc);
+
+        JButton applyButton = new JButton("View Details / Apply");
         applyButton.setFont(BUTTON_FONT);
-        applyButton.setBackground(PRIMARY_COLOR);
-        applyButton.setForeground(Color.WHITE);
         applyButton.setFocusPainted(false);
-        applyButton.setBorder(BorderFactory.createEmptyBorder(10, 20, 10, 20));
-        applyButton.addActionListener(e -> mainFrame.navigateToApplicationForm(pet.getPetId()));
+        applyButton.setCursor(new Cursor(Cursor.HAND_CURSOR));
 
-        // Add hover effect
-        applyButton.addMouseListener(new MouseAdapter() {
-            @Override
-            public void mouseEntered(MouseEvent e) {
-                applyButton.setBackground(new Color(41, 128, 185));
-            }
-            @Override
-            public void mouseExited(MouseEvent e) {
-                applyButton.setBackground(PRIMARY_COLOR);
-            }
-        });
+        if ("available".equalsIgnoreCase(pet.getStatus())) {
+            applyButton.setBackground(PRIMARY_COLOR);
+            applyButton.setForeground(Color.WHITE);
+            applyButton.addActionListener(e -> mainFrame.navigateToApplicationForm(pet.getPetId()));
+            applyButton.addMouseListener(new MouseAdapter() {
+                @Override
+                public void mouseEntered(MouseEvent e) {
+                    applyButton.setBackground(PRIMARY_COLOR.darker());
+                }
+                @Override
+                public void mouseExited(MouseEvent e) {
+                    applyButton.setBackground(PRIMARY_COLOR);
+                }
+            });
+        } else {
+            applyButton.setBackground(Color.LIGHT_GRAY);
+            applyButton.setForeground(Color.DARK_GRAY);
+            applyButton.setText(pet.getStatus().substring(0, 1).toUpperCase() + pet.getStatus().substring(1));
+            applyButton.setEnabled(false);
+        }
+        applyButton.setBorder(BorderFactory.createEmptyBorder(10, 15, 10, 15));
 
-        detailsPanel.add(applyButton, gbc);
-
-        card.add(detailsPanel, BorderLayout.SOUTH);
-        
-        // Force the card to update
-        card.validate();
-        card.repaint();
-        System.out.println("DEBUG: Card created and updated for pet: " + pet.getName());
+        gbc.gridx = 0;
+        gbc.gridy++;
+        gbc.gridwidth = 2;
+        gbc.weighty = 0.0;
+        gbc.fill = GridBagConstraints.HORIZONTAL;
+        card.add(applyButton, gbc);
 
         return card;
     }
 
+    // Helper method to get age category string
+    private String getAgeCategory(int age) {
+        if (age <= 1) return "Puppy/Kitten";
+        if (age <= 3) return "Young";
+        if (age <= 7) return "Adult";
+        return "Senior";
+    }
+
     public void refreshPetList() {
-        loadPets();
+        filterPets(); // Refresh by re-filtering
+        // Optional: Scroll to top after refresh
+        // SwingUtilities.invokeLater(() -> scrollPane.getVerticalScrollBar().setValue(0));
     }
 }
