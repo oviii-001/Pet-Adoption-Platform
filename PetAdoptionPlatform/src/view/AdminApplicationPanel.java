@@ -31,7 +31,7 @@ public class AdminApplicationPanel extends JPanel {
         setLayout(new BorderLayout());
 
         // Table setup
-        String[] columnNames = {"App ID", "Adopter Name", "Pet Name", "Pet Type", "Current Status"};
+        String[] columnNames = {"App ID", "Adopter Name", "Pet Name", "Pet Type", "Current Status", "Address", "Mobile", "Notes"};
         tableModel = new DefaultTableModel(columnNames, 0){
             @Override
             public boolean isCellEditable(int row, int column) {
@@ -41,6 +41,17 @@ public class AdminApplicationPanel extends JPanel {
         applicationTable = new JTable(tableModel);
         applicationTable.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
         applicationTable.getTableHeader().setReorderingAllowed(false);
+        applicationTable.setAutoResizeMode(JTable.AUTO_RESIZE_OFF);
+        
+        // Set column widths
+        applicationTable.getColumnModel().getColumn(0).setPreferredWidth(50);  // App ID
+        applicationTable.getColumnModel().getColumn(1).setPreferredWidth(150); // Adopter Name
+        applicationTable.getColumnModel().getColumn(2).setPreferredWidth(100); // Pet Name
+        applicationTable.getColumnModel().getColumn(3).setPreferredWidth(80);  // Pet Type
+        applicationTable.getColumnModel().getColumn(4).setPreferredWidth(80);  // Status
+        applicationTable.getColumnModel().getColumn(5).setPreferredWidth(150); // Address
+        applicationTable.getColumnModel().getColumn(6).setPreferredWidth(100); // Mobile
+        applicationTable.getColumnModel().getColumn(7).setPreferredWidth(200); // Notes
 
         // Add listener to enable/disable buttons based on selection and status
         applicationTable.getSelectionModel().addListSelectionListener(e -> updateButtonStates());
@@ -94,6 +105,9 @@ public class AdminApplicationPanel extends JPanel {
             row.add(petName);
             row.add(petType);
             row.add(app.getStatus());
+            row.add(app.getAddress());
+            row.add(app.getMobileNumber());
+            row.add(app.getNotes());
             tableModel.addRow(row);
         }
         System.out.println("Admin Application list refreshed.");

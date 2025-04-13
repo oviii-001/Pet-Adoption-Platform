@@ -27,7 +27,7 @@ public class StatusPanel extends JPanel {
         setLayout(new BorderLayout());
 
         // Table setup
-        String[] columnNames = {"App ID", "Pet Name", "Pet Type", "Status"};
+        String[] columnNames = {"App ID", "Pet Name", "Pet Type", "Status", "Address", "Mobile", "Notes"};
         tableModel = new DefaultTableModel(columnNames, 0){
             @Override
             public boolean isCellEditable(int row, int column) {
@@ -36,6 +36,16 @@ public class StatusPanel extends JPanel {
         };
         statusTable = new JTable(tableModel);
         statusTable.getTableHeader().setReorderingAllowed(false);
+        statusTable.setAutoResizeMode(JTable.AUTO_RESIZE_OFF);
+        
+        // Set column widths
+        statusTable.getColumnModel().getColumn(0).setPreferredWidth(50);  // App ID
+        statusTable.getColumnModel().getColumn(1).setPreferredWidth(100); // Pet Name
+        statusTable.getColumnModel().getColumn(2).setPreferredWidth(80);  // Pet Type
+        statusTable.getColumnModel().getColumn(3).setPreferredWidth(80);  // Status
+        statusTable.getColumnModel().getColumn(4).setPreferredWidth(150); // Address
+        statusTable.getColumnModel().getColumn(5).setPreferredWidth(100); // Mobile
+        statusTable.getColumnModel().getColumn(6).setPreferredWidth(200); // Notes
 
         JScrollPane scrollPane = new JScrollPane(statusTable);
         add(scrollPane, BorderLayout.CENTER);
@@ -70,6 +80,9 @@ public class StatusPanel extends JPanel {
             row.add(petName); // Display Pet Name
             row.add(petType); // Display Pet Type
             row.add(app.getStatus());
+            row.add(app.getAddress());
+            row.add(app.getMobileNumber());
+            row.add(app.getNotes());
             tableModel.addRow(row);
         }
         System.out.println("Loaded " + applications.size() + " applications for adopter ID: " + adopterId);

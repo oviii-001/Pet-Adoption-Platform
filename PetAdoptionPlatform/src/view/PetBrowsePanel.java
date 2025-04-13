@@ -270,12 +270,6 @@ public class PetBrowsePanel extends JPanel {
         // Update UI
         petsPanel.revalidate();
         petsPanel.repaint();
-        
-        // Show message
-        JOptionPane.showMessageDialog(this, 
-            "Showing " + filteredPets.size() + " pets matching your criteria",
-            "Filter Applied",
-            JOptionPane.INFORMATION_MESSAGE);
     }
 
     private boolean matchesAgeCategory(int age, String category) {

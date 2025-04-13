@@ -24,8 +24,8 @@ public class AdopterController {
 
     // Method to potentially add a new adopter if needed (e.g., if no default existed)
     // Returns the new adopter's ID or -1 on failure
-    public int addAdopter(String name, String contactInfo, String preferences) {
-        Adopter newAdopter = new Adopter(0, name, contactInfo, preferences);
+    public int addAdopter(String name, String contactInfo, String preferences, String address, String mobileNumber, String notes) {
+        Adopter newAdopter = new Adopter(0, name, contactInfo, preferences, address, mobileNumber, notes);
         try {
             return Database.addAdopter(newAdopter);
         } catch (SQLException e) {
@@ -33,6 +33,11 @@ public class AdopterController {
             e.printStackTrace();
             return -1;
         }
+    }
+
+    // Overloaded method for backward compatibility
+    public int addAdopter(String name, String contactInfo, String preferences) {
+        return addAdopter(name, contactInfo, preferences, "", "", "");
     }
 
     public Adopter getAdopterById(int adopterId) {

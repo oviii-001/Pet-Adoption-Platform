@@ -55,7 +55,10 @@ public class Database {
                         adopter_id INTEGER PRIMARY KEY AUTOINCREMENT,
                         name TEXT NOT NULL,
                         contact_info TEXT,
-                        preferences TEXT
+                        preferences TEXT,
+                        address TEXT,
+                        mobile_number TEXT,
+                        notes TEXT
                     );
 
                     CREATE TABLE IF NOT EXISTS Application (
@@ -63,6 +66,9 @@ public class Database {
                         adopter_id INTEGER NOT NULL,
                         pet_id INTEGER NOT NULL,
                         status TEXT DEFAULT 'pending',
+                        address TEXT,
+                        mobile_number TEXT,
+                        notes TEXT,
                         FOREIGN KEY (adopter_id) REFERENCES Adopter(adopter_id) ON DELETE CASCADE,
                         FOREIGN KEY (pet_id) REFERENCES Pet(pet_id) ON DELETE CASCADE
                     );
@@ -300,7 +306,10 @@ public class Database {
                         rs.getInt("adopter_id"),
                         rs.getString("name"),
                         rs.getString("contact_info"),
-                        rs.getString("preferences")
+                        rs.getString("preferences"),
+                        rs.getString("address"),
+                        rs.getString("mobile_number"),
+                        rs.getString("notes")
                 );
             }
         } catch (SQLException e) {
@@ -309,25 +318,25 @@ public class Database {
         return null;
     }
 
-    // Simple add adopter, returns the generated ID or -1 on failure
     public static int addAdopter(Adopter adopter) throws SQLException {
-        String sql = "INSERT INTO Adopter (name, contact_info, preferences) VALUES (?, ?, ?)";
+        String sql = "INSERT INTO Adopter (name, contact_info, preferences, address, mobile_number, notes) " +
+                    "VALUES (?, ?, ?, ?, ?, ?)";
         try (Connection conn = getConnection();
              PreparedStatement pstmt = conn.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
             pstmt.setString(1, adopter.getName());
             pstmt.setString(2, adopter.getContactInfo());
             pstmt.setString(3, adopter.getPreferences());
-            int affectedRows = pstmt.executeUpdate();
-
-            if (affectedRows > 0) {
-                try (ResultSet generatedKeys = pstmt.getGeneratedKeys()) {
-                    if (generatedKeys.next()) {
-                        return generatedKeys.getInt(1); // Return the new ID
-                    }
-                }
+            pstmt.setString(4, adopter.getAddress());
+            pstmt.setString(5, adopter.getMobileNumber());
+            pstmt.setString(6, adopter.getNotes());
+            pstmt.executeUpdate();
+            
+            ResultSet rs = pstmt.getGeneratedKeys();
+            if (rs.next()) {
+                return rs.getInt(1);
             }
+            return -1;
         }
-        return -1; // Indicate failure
     }
 
     public static boolean updateAdopterPreferences(int adopterId, String preferences) throws SQLException {
@@ -356,11 +365,14 @@ public class Database {
                         rs.getInt("application_id"),
                         rs.getInt("adopter_id"),
                         rs.getInt("pet_id"),
-                        rs.getString("status")
+                        rs.getString("status"),
+                        rs.getString("address"),
+                        rs.getString("mobile_number"),
+                        rs.getString("notes")
                 ));
             }
         } catch (SQLException e) {
-            System.err.println("Error fetching all applications: " + e.getMessage());
+            System.err.println("Error fetching applications: " + e.getMessage());
         }
         return applications;
     }
@@ -372,12 +384,16 @@ public class Database {
              PreparedStatement pstmt = conn.prepareStatement(sql)) {
             pstmt.setInt(1, adopterId);
             ResultSet rs = pstmt.executeQuery();
+
             while (rs.next()) {
                 applications.add(new Application(
                         rs.getInt("application_id"),
                         rs.getInt("adopter_id"),
                         rs.getInt("pet_id"),
-                        rs.getString("status")
+                        rs.getString("status"),
+                        rs.getString("address"),
+                        rs.getString("mobile_number"),
+                        rs.getString("notes")
                 ));
             }
         } catch (SQLException e) {
@@ -387,21 +403,38 @@ public class Database {
     }
 
     public static boolean addApplication(Application application) throws SQLException {
-        // Check if pet is available before adding application
-        Pet pet = getPetById(application.getPetId());
-        if (pet == null || !"available".equalsIgnoreCase(pet.getStatus())) {
-            System.err.println("Cannot apply for pet ID " + application.getPetId() + ". Pet not found or not available.");
-            return false;
-        }
+        Connection conn = getConnection();
+        conn.setAutoCommit(false); // Start transaction
+        
+        try {
+            // Insert the application
+            String appSql = "INSERT INTO Application (adopter_id, pet_id, status, address, mobile_number, notes) " +
+                          "VALUES (?, ?, ?, ?, ?, ?)";
+            try (PreparedStatement pstmt = conn.prepareStatement(appSql)) {
+                pstmt.setInt(1, application.getAdopterId());
+                pstmt.setInt(2, application.getPetId());
+                pstmt.setString(3, application.getStatus());
+                pstmt.setString(4, application.getAddress());
+                pstmt.setString(5, application.getMobileNumber());
+                pstmt.setString(6, application.getNotes());
+                pstmt.executeUpdate();
+            }
 
-        String sql = "INSERT INTO Application (adopter_id, pet_id, status) VALUES (?, ?, ?)";
-        try (Connection conn = getConnection();
-             PreparedStatement pstmt = conn.prepareStatement(sql)) {
-            pstmt.setInt(1, application.getAdopterId());
-            pstmt.setInt(2, application.getPetId());
-            pstmt.setString(3, application.getStatus()); // Should default to 'pending'
-            int affectedRows = pstmt.executeUpdate();
-            return affectedRows > 0;
+            // Update the pet's status to pending
+            String petSql = "UPDATE Pet SET status = 'pending' WHERE pet_id = ?";
+            try (PreparedStatement pstmt = conn.prepareStatement(petSql)) {
+                pstmt.setInt(1, application.getPetId());
+                pstmt.executeUpdate();
+            }
+
+            conn.commit(); // Commit transaction
+            return true;
+        } catch (SQLException e) {
+            conn.rollback(); // Rollback on error
+            System.err.println("Error in addApplication transaction: " + e.getMessage());
+            throw e;
+        } finally {
+            conn.setAutoCommit(true); // Reset auto-commit
         }
     }
 
@@ -413,15 +446,28 @@ public class Database {
             pstmt.setInt(2, applicationId);
             int affectedRows = pstmt.executeUpdate();
 
-            // If approved, update the corresponding pet's status to 'adopted'
-            if (affectedRows > 0 && "approved".equalsIgnoreCase(status)) {
-                Application app = getApplicationById(applicationId); // Need a helper for this
+            if (affectedRows > 0) {
+                Application app = getApplicationById(applicationId);
                 if (app != null) {
-                    updatePetStatus(app.getPetId(), "adopted");
+                    if ("approved".equalsIgnoreCase(status)) {
+                        updatePetStatus(app.getPetId(), "adopted");
+                    } else if ("pending".equalsIgnoreCase(status)) {
+                        updatePetStatus(app.getPetId(), "pending");
+                    } else if ("rejected".equalsIgnoreCase(status)) {
+                        // Check if there are any other pending applications for this pet
+                        String checkPendingSql = "SELECT COUNT(*) FROM Application WHERE pet_id = ? AND status = 'pending' AND application_id != ?";
+                        try (PreparedStatement checkStmt = conn.prepareStatement(checkPendingSql)) {
+                            checkStmt.setInt(1, app.getPetId());
+                            checkStmt.setInt(2, applicationId);
+                            ResultSet rs = checkStmt.executeQuery();
+                            if (rs.next() && rs.getInt(1) == 0) {
+                                // No other pending applications, set pet back to available
+                                updatePetStatus(app.getPetId(), "available");
+                            }
+                        }
+                    }
                 }
             }
-            // Optional: If rejected, maybe set pet back to 'available' if it was held?
-            // Current logic assumes pet becomes adopted *only* on approval.
 
             return affectedRows > 0;
         }
@@ -439,7 +485,10 @@ public class Database {
                         rs.getInt("application_id"),
                         rs.getInt("adopter_id"),
                         rs.getInt("pet_id"),
-                        rs.getString("status")
+                        rs.getString("status"),
+                        rs.getString("address"),
+                        rs.getString("mobile_number"),
+                        rs.getString("notes")
                 );
             }
         } catch (SQLException e) {
