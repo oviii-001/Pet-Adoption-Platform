@@ -2,6 +2,9 @@ package view;
 
 import controller.PetController;
 import model.Pet;
+import model.Application;
+import model.Adopter;
+import model.Database;
 
 import javax.swing.*;
 import javax.swing.border.Border;
@@ -50,6 +53,8 @@ public class AdminPetPanel extends JPanel {
     private static final Color BUTTON_HOVER_COLOR = new Color(45, 75, 140);
     private static final Color DELETE_BUTTON_COLOR = new Color(210, 50, 50);
     private static final Color DELETE_BUTTON_HOVER_COLOR = new Color(180, 40, 40);
+    private static final Color SUCCESS_COLOR = new Color(46, 204, 113);
+    private static final Color SUCCESS_COLOR_DARKER = new Color(39, 174, 96);
 
     private static final Font HEADING_FONT = new Font("Segoe UI Semibold", Font.BOLD, 20);
     private static final Font LABEL_FONT = new Font("Segoe UI", Font.BOLD, 13);
@@ -79,6 +84,7 @@ public class AdminPetPanel extends JPanel {
     private JButton updateButton;
     private JButton deleteButton;
     private JButton clearButton;
+    private JButton viewApplicationsButton;
 
     public AdminPetPanel(PetController controller) {
         this.petController = controller;
@@ -117,11 +123,23 @@ public class AdminPetPanel extends JPanel {
         panel.setBackground(Color.WHITE);
         panel.setBorder(new RoundedBorder(INPUT_BORDER_COLOR, 1, 15));
 
+        // Create header panel with title and button
+        JPanel headerPanel = new JPanel(new BorderLayout());
+        headerPanel.setBackground(Color.WHITE);
+        headerPanel.setBorder(new EmptyBorder(15, 15, 10, 15));
+
         JLabel tableTitle = new JLabel("Manage Pets");
         tableTitle.setFont(HEADING_FONT);
         tableTitle.setForeground(PRIMARY_COLOR);
-        tableTitle.setBorder(new EmptyBorder(15, 15, 10, 15));
-        panel.add(tableTitle, BorderLayout.NORTH);
+
+        viewApplicationsButton = createStyledButton("View Applications (0)", PRIMARY_COLOR, BUTTON_HOVER_COLOR);
+        viewApplicationsButton.addActionListener(e -> showApplications());
+        updateApplicationCount(); // Initial count update
+
+        headerPanel.add(tableTitle, BorderLayout.WEST);
+        headerPanel.add(viewApplicationsButton, BorderLayout.EAST);
+
+        panel.add(headerPanel, BorderLayout.NORTH);
 
         setupTable(); // Initializes petTable, tableModel, scrollPane
         panel.add(scrollPane, BorderLayout.CENTER);
@@ -637,6 +655,139 @@ public class AdminPetPanel extends JPanel {
                  JOptionPane.showMessageDialog(this, "Failed to delete pet. Check database connection or logs.", "Error", JOptionPane.ERROR_MESSAGE);
              }
         }
+    }
+
+    private int getPendingApplicationCount() {
+        List<Application> applications = Database.getAllApplications();
+        int pendingCount = 0;
+        for (Application app : applications) {
+            if ("pending".equalsIgnoreCase(app.getStatus())) {
+                pendingCount++;
+            }
+        }
+        return pendingCount;
+    }
+
+    private void updateApplicationCount() {
+        int count = getPendingApplicationCount();
+        viewApplicationsButton.setText("View Applications (" + count + ")");
+    }
+
+    private void showApplications() {
+        int pendingCount = getPendingApplicationCount();
+        if (pendingCount == 0) {
+            JOptionPane.showMessageDialog(this, "No pending applications found.", "Applications", JOptionPane.INFORMATION_MESSAGE);
+            return;
+        }
+
+        // Create a dialog to show applications
+        JDialog dialog = new JDialog((Frame)SwingUtilities.getWindowAncestor(this), "Pending Applications", true);
+        dialog.setLayout(new BorderLayout());
+        dialog.setSize(800, 600);
+        dialog.setLocationRelativeTo(this);
+
+        // Create table model
+        String[] columnNames = {"App ID", "Adopter Name", "Pet Name", "Pet Type", "Status", "Address", "Mobile", "Notes"};
+        DefaultTableModel model = new DefaultTableModel(columnNames, 0) {
+            @Override
+            public boolean isCellEditable(int row, int column) {
+                return false;
+            }
+        };
+
+        // Create table
+        JTable table = new JTable(model);
+        table.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
+        table.getTableHeader().setReorderingAllowed(false);
+
+        // Set column widths
+        table.getColumnModel().getColumn(0).setPreferredWidth(50);  // App ID
+        table.getColumnModel().getColumn(1).setPreferredWidth(150); // Adopter Name
+        table.getColumnModel().getColumn(2).setPreferredWidth(100); // Pet Name
+        table.getColumnModel().getColumn(3).setPreferredWidth(80);  // Pet Type
+        table.getColumnModel().getColumn(4).setPreferredWidth(80);  // Status
+        table.getColumnModel().getColumn(5).setPreferredWidth(150); // Address
+        table.getColumnModel().getColumn(6).setPreferredWidth(100); // Mobile
+        table.getColumnModel().getColumn(7).setPreferredWidth(200); // Notes
+
+        // Add applications to table
+        List<Application> applications = Database.getAllApplications();
+        for (Application app : applications) {
+            if ("pending".equalsIgnoreCase(app.getStatus())) {
+                Pet pet = Database.getPetById(app.getPetId());
+                Adopter adopter = Database.getAdopterById(app.getAdopterId());
+                
+                Vector<Object> row = new Vector<>();
+                row.add(app.getApplicationId());
+                row.add(adopter != null ? adopter.getName() : "N/A");
+                row.add(pet != null ? pet.getName() : "N/A");
+                row.add(pet != null ? pet.getType() : "N/A");
+                row.add(app.getStatus());
+                row.add(app.getAddress());
+                row.add(app.getMobileNumber());
+                row.add(app.getNotes());
+                model.addRow(row);
+            }
+        }
+
+        // Add table to scroll pane
+        JScrollPane scrollPane = new JScrollPane(table);
+        dialog.add(scrollPane, BorderLayout.CENTER);
+
+        // Add buttons panel
+        JPanel buttonPanel = new JPanel(new FlowLayout(FlowLayout.CENTER, 10, 10));
+        JButton approveButton = createStyledButton("Approve", SUCCESS_COLOR, SUCCESS_COLOR_DARKER);
+        JButton rejectButton = createStyledButton("Reject", DELETE_BUTTON_COLOR, DELETE_BUTTON_HOVER_COLOR);
+        JButton closeButton = createStyledButton("Close", SECONDARY_COLOR, SECONDARY_COLOR.darker());
+
+        approveButton.addActionListener(e -> {
+            int selectedRow = table.getSelectedRow();
+            if (selectedRow == -1) {
+                JOptionPane.showMessageDialog(dialog, "Please select an application to approve.", "No Selection", JOptionPane.WARNING_MESSAGE);
+                return;
+            }
+            int appId = (int) model.getValueAt(selectedRow, 0);
+            try {
+                if (Database.updateApplicationStatus(appId, "approved")) {
+                    model.removeRow(selectedRow);
+                    updateApplicationCount(); // Update count after approval
+                    JOptionPane.showMessageDialog(dialog, "Application approved successfully!", "Success", JOptionPane.INFORMATION_MESSAGE);
+                } else {
+                    JOptionPane.showMessageDialog(dialog, "Failed to approve application.", "Error", JOptionPane.ERROR_MESSAGE);
+                }
+            } catch (SQLException ex) {
+                JOptionPane.showMessageDialog(dialog, "Database error: " + ex.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
+            }
+        });
+
+        rejectButton.addActionListener(e -> {
+            int selectedRow = table.getSelectedRow();
+            if (selectedRow == -1) {
+                JOptionPane.showMessageDialog(dialog, "Please select an application to reject.", "No Selection", JOptionPane.WARNING_MESSAGE);
+                return;
+            }
+            int appId = (int) model.getValueAt(selectedRow, 0);
+            try {
+                if (Database.updateApplicationStatus(appId, "rejected")) {
+                    model.removeRow(selectedRow);
+                    updateApplicationCount(); // Update count after rejection
+                    JOptionPane.showMessageDialog(dialog, "Application rejected successfully!", "Success", JOptionPane.INFORMATION_MESSAGE);
+                } else {
+                    JOptionPane.showMessageDialog(dialog, "Failed to reject application.", "Error", JOptionPane.ERROR_MESSAGE);
+                }
+            } catch (SQLException ex) {
+                JOptionPane.showMessageDialog(dialog, "Database error: " + ex.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
+            }
+        });
+
+        closeButton.addActionListener(e -> dialog.dispose());
+
+        buttonPanel.add(approveButton);
+        buttonPanel.add(rejectButton);
+        buttonPanel.add(closeButton);
+        dialog.add(buttonPanel, BorderLayout.SOUTH);
+
+        dialog.setVisible(true);
     }
 
     // Helper class for rounded borders (ensure it's defined or accessible)
