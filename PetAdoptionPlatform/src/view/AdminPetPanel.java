@@ -686,102 +686,194 @@ public class AdminPetPanel extends JPanel {
         // Create a dialog to show applications
         JDialog dialog = new JDialog((Frame)SwingUtilities.getWindowAncestor(this), "Pending Applications", true);
         dialog.setLayout(new BorderLayout());
-        dialog.setSize(800, 600);
+        dialog.setSize(900, 700);
         dialog.setLocationRelativeTo(this);
 
-        // Create table model
-        String[] columnNames = {"App ID", "Adopter Name", "Pet Name", "Pet Type", "Status", "Address", "Mobile", "Notes"};
-        DefaultTableModel model = new DefaultTableModel(columnNames, 0) {
+        // Create main panel with split pane
+        JSplitPane splitPane = new JSplitPane(JSplitPane.HORIZONTAL_SPLIT);
+        splitPane.setDividerLocation(300);
+        splitPane.setDividerSize(3);
+        splitPane.setBackground(Color.WHITE);
+
+        // Left panel - Application list
+        JPanel listPanel = new JPanel(new BorderLayout());
+        listPanel.setBackground(Color.WHITE);
+        listPanel.setBorder(new EmptyBorder(10, 10, 10, 10));
+
+        // Create table model for application list
+        String[] columnNames = {"App ID", "Pet Name", "Adopter Name"};
+        DefaultTableModel listModel = new DefaultTableModel(columnNames, 0) {
             @Override
             public boolean isCellEditable(int row, int column) {
                 return false;
             }
         };
 
-        // Create table
-        JTable table = new JTable(model);
-        table.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
-        table.getTableHeader().setReorderingAllowed(false);
+        // Create table for application list
+        JTable listTable = new JTable(listModel);
+        listTable.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
+        listTable.getTableHeader().setReorderingAllowed(false);
+        listTable.setRowHeight(30);
+        listTable.setFont(TABLE_FONT);
+        listTable.getTableHeader().setFont(TABLE_HEADER_FONT);
+        listTable.setGridColor(TABLE_GRID_COLOR);
+        listTable.setSelectionBackground(PRIMARY_COLOR.brighter());
+        listTable.setSelectionForeground(Color.WHITE);
 
         // Set column widths
-        table.getColumnModel().getColumn(0).setPreferredWidth(50);  // App ID
-        table.getColumnModel().getColumn(1).setPreferredWidth(150); // Adopter Name
-        table.getColumnModel().getColumn(2).setPreferredWidth(100); // Pet Name
-        table.getColumnModel().getColumn(3).setPreferredWidth(80);  // Pet Type
-        table.getColumnModel().getColumn(4).setPreferredWidth(80);  // Status
-        table.getColumnModel().getColumn(5).setPreferredWidth(150); // Address
-        table.getColumnModel().getColumn(6).setPreferredWidth(100); // Mobile
-        table.getColumnModel().getColumn(7).setPreferredWidth(200); // Notes
+        listTable.getColumnModel().getColumn(0).setPreferredWidth(60);  // App ID
+        listTable.getColumnModel().getColumn(1).setPreferredWidth(120); // Pet Name
+        listTable.getColumnModel().getColumn(2).setPreferredWidth(120); // Adopter Name
 
-        // Add applications to table
-        List<Application> applications = Database.getAllApplications();
-        for (Application app : applications) {
-            if ("pending".equalsIgnoreCase(app.getStatus())) {
-                Pet pet = Database.getPetById(app.getPetId());
-                Adopter adopter = Database.getAdopterById(app.getAdopterId());
-                
-                Vector<Object> row = new Vector<>();
-                row.add(app.getApplicationId());
-                row.add(adopter != null ? adopter.getName() : "N/A");
-                row.add(pet != null ? pet.getName() : "N/A");
-                row.add(pet != null ? pet.getType() : "N/A");
-                row.add(app.getStatus());
-                row.add(app.getAddress());
-                row.add(app.getMobileNumber());
-                row.add(app.getNotes());
-                model.addRow(row);
-            }
-        }
+        JScrollPane listScrollPane = new JScrollPane(listTable);
+        listPanel.add(listScrollPane, BorderLayout.CENTER);
 
-        // Add table to scroll pane
-        JScrollPane scrollPane = new JScrollPane(table);
-        dialog.add(scrollPane, BorderLayout.CENTER);
+        // Right panel - Application details
+        JPanel detailsPanel = new JPanel(new BorderLayout());
+        detailsPanel.setBackground(Color.WHITE);
+        detailsPanel.setBorder(new EmptyBorder(10, 10, 10, 10));
 
-        // Add buttons panel
+        // Create details form
+        JPanel formPanel = new JPanel(new GridBagLayout());
+        formPanel.setBackground(Color.WHITE);
+        GridBagConstraints gbc = new GridBagConstraints();
+        gbc.insets = new Insets(5, 5, 5, 5);
+        gbc.anchor = GridBagConstraints.WEST;
+        int y = 0;
+
+        // Application Details Section
+        JLabel appDetailsLabel = new JLabel("Application Details");
+        appDetailsLabel.setFont(HEADING_FONT);
+        appDetailsLabel.setForeground(PRIMARY_COLOR);
+        gbc.gridx = 0; gbc.gridy = y++; gbc.gridwidth = 2; gbc.insets = new Insets(10, 0, 15, 0);
+        formPanel.add(appDetailsLabel, gbc);
+        gbc.gridwidth = 1; gbc.insets = new Insets(5, 5, 5, 5);
+
+        // Application ID
+        JLabel appIdLabel = createLabel("Application ID:");
+        JTextField appIdField = createReadOnlyTextField(10);
+        addFormRow(formPanel, gbc, y++, "Application ID:", appIdField);
+
+        // Pet Details Section
+        JLabel petDetailsLabel = new JLabel("Pet Details");
+        petDetailsLabel.setFont(HEADING_FONT);
+        petDetailsLabel.setForeground(PRIMARY_COLOR);
+        gbc.gridx = 0; gbc.gridy = y++; gbc.gridwidth = 2; gbc.insets = new Insets(15, 0, 10, 0);
+        formPanel.add(petDetailsLabel, gbc);
+        gbc.gridwidth = 1; gbc.insets = new Insets(5, 5, 5, 5);
+
+        // Pet fields
+        JTextField petNameField = createReadOnlyTextField(20);
+        JTextField petTypeField = createReadOnlyTextField(15);
+        JTextField petBreedField = createReadOnlyTextField(15);
+        JTextField petAgeField = createReadOnlyTextField(5);
+        JTextArea petDescArea = new JTextArea(3, 20);
+        petDescArea.setEditable(false);
+        petDescArea.setFont(INPUT_FONT);
+        petDescArea.setLineWrap(true);
+        petDescArea.setWrapStyleWord(true);
+        JScrollPane petDescScroll = new JScrollPane(petDescArea);
+
+        addFormRow(formPanel, gbc, y++, "Pet Name:", petNameField);
+        addFormRow(formPanel, gbc, y++, "Type:", petTypeField);
+        addFormRow(formPanel, gbc, y++, "Breed:", petBreedField);
+        addFormRow(formPanel, gbc, y++, "Age:", petAgeField);
+        gbc.gridx = 0; gbc.gridy = y;
+        formPanel.add(createLabel("Description:"), gbc);
+        gbc.gridx = 1; gbc.gridy = y++; gbc.fill = GridBagConstraints.HORIZONTAL;
+        formPanel.add(petDescScroll, gbc);
+        gbc.fill = GridBagConstraints.NONE;
+
+        // Adopter Details Section
+        JLabel adopterDetailsLabel = new JLabel("Adopter Details");
+        adopterDetailsLabel.setFont(HEADING_FONT);
+        adopterDetailsLabel.setForeground(PRIMARY_COLOR);
+        gbc.gridx = 0; gbc.gridy = y++; gbc.gridwidth = 2; gbc.insets = new Insets(15, 0, 10, 0);
+        formPanel.add(adopterDetailsLabel, gbc);
+        gbc.gridwidth = 1; gbc.insets = new Insets(5, 5, 5, 5);
+
+        // Adopter fields
+        JTextField adopterNameField = createReadOnlyTextField(20);
+        JTextField contactField = createReadOnlyTextField(20);
+        JTextArea addressArea = new JTextArea(3, 20);
+        addressArea.setEditable(false);
+        addressArea.setFont(INPUT_FONT);
+        addressArea.setLineWrap(true);
+        addressArea.setWrapStyleWord(true);
+        JScrollPane addressScroll = new JScrollPane(addressArea);
+        JTextField mobileField = createReadOnlyTextField(15);
+        JTextArea notesArea = new JTextArea(3, 20);
+        notesArea.setEditable(false);
+        notesArea.setFont(INPUT_FONT);
+        notesArea.setLineWrap(true);
+        notesArea.setWrapStyleWord(true);
+        JScrollPane notesScroll = new JScrollPane(notesArea);
+
+        addFormRow(formPanel, gbc, y++, "Name:", adopterNameField);
+        addFormRow(formPanel, gbc, y++, "Contact:", contactField);
+        gbc.gridx = 0; gbc.gridy = y;
+        formPanel.add(createLabel("Address:"), gbc);
+        gbc.gridx = 1; gbc.gridy = y++; gbc.fill = GridBagConstraints.HORIZONTAL;
+        formPanel.add(addressScroll, gbc);
+        gbc.fill = GridBagConstraints.NONE;
+        addFormRow(formPanel, gbc, y++, "Mobile:", mobileField);
+        gbc.gridx = 0; gbc.gridy = y;
+        formPanel.add(createLabel("Notes:"), gbc);
+        gbc.gridx = 1; gbc.gridy = y++; gbc.fill = GridBagConstraints.HORIZONTAL;
+        formPanel.add(notesScroll, gbc);
+        gbc.fill = GridBagConstraints.NONE;
+
+        JScrollPane formScrollPane = new JScrollPane(formPanel);
+        detailsPanel.add(formScrollPane, BorderLayout.CENTER);
+
+        // Add buttons panel at bottom
         JPanel buttonPanel = new JPanel(new FlowLayout(FlowLayout.CENTER, 10, 10));
+        buttonPanel.setBackground(Color.WHITE);
+        buttonPanel.setBorder(new EmptyBorder(10, 10, 10, 10));
+
         JButton approveButton = createStyledButton("Approve", SUCCESS_COLOR, SUCCESS_COLOR_DARKER);
         JButton rejectButton = createStyledButton("Reject", DELETE_BUTTON_COLOR, DELETE_BUTTON_HOVER_COLOR);
         JButton closeButton = createStyledButton("Close", SECONDARY_COLOR, SECONDARY_COLOR.darker());
 
         approveButton.addActionListener(e -> {
-            int selectedRow = table.getSelectedRow();
+            int selectedRow = listTable.getSelectedRow();
             if (selectedRow == -1) {
                 JOptionPane.showMessageDialog(dialog, "Please select an application to approve.", "No Selection", JOptionPane.WARNING_MESSAGE);
                 return;
             }
-            int appId = (int) model.getValueAt(selectedRow, 0);
+            int appId = (int) listModel.getValueAt(selectedRow, 0);
             try {
                 if (Database.updateApplicationStatus(appId, "approved")) {
-                    model.removeRow(selectedRow);
-                    updateApplicationCount(); // Update count after approval
+                    listModel.removeRow(selectedRow);
+                    updateApplicationCount();
                     JOptionPane.showMessageDialog(dialog, "Application approved successfully!", "Success", JOptionPane.INFORMATION_MESSAGE);
                 } else {
                     JOptionPane.showMessageDialog(dialog, "Failed to approve application.", "Error", JOptionPane.ERROR_MESSAGE);
                 }
             } catch (SQLException ex) {
                 JOptionPane.showMessageDialog(dialog, "Database error: " + ex.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
-                ex.printStackTrace(); // Print stack trace for detailed debugging
+                ex.printStackTrace();
             }
         });
 
         rejectButton.addActionListener(e -> {
-            int selectedRow = table.getSelectedRow();
+            int selectedRow = listTable.getSelectedRow();
             if (selectedRow == -1) {
                 JOptionPane.showMessageDialog(dialog, "Please select an application to reject.", "No Selection", JOptionPane.WARNING_MESSAGE);
                 return;
             }
-            int appId = (int) model.getValueAt(selectedRow, 0);
+            int appId = (int) listModel.getValueAt(selectedRow, 0);
             try {
                 if (Database.updateApplicationStatus(appId, "rejected")) {
-                    model.removeRow(selectedRow);
-                    updateApplicationCount(); // Update count after rejection
+                    listModel.removeRow(selectedRow);
+                    updateApplicationCount();
                     JOptionPane.showMessageDialog(dialog, "Application rejected successfully!", "Success", JOptionPane.INFORMATION_MESSAGE);
                 } else {
                     JOptionPane.showMessageDialog(dialog, "Failed to reject application.", "Error", JOptionPane.ERROR_MESSAGE);
                 }
             } catch (SQLException ex) {
                 JOptionPane.showMessageDialog(dialog, "Database error: " + ex.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
-                ex.printStackTrace(); // Print stack trace for detailed debugging
+                ex.printStackTrace();
             }
         });
 
@@ -790,7 +882,76 @@ public class AdminPetPanel extends JPanel {
         buttonPanel.add(approveButton);
         buttonPanel.add(rejectButton);
         buttonPanel.add(closeButton);
-        dialog.add(buttonPanel, BorderLayout.SOUTH);
+        detailsPanel.add(buttonPanel, BorderLayout.SOUTH);
+
+        // Add panels to split pane
+        splitPane.setLeftComponent(listPanel);
+        splitPane.setRightComponent(detailsPanel);
+
+        // Add split pane to dialog
+        dialog.add(splitPane, BorderLayout.CENTER);
+
+        // Add applications to list table
+        List<Application> applications = Database.getAllApplications();
+        for (Application app : applications) {
+            if ("pending".equalsIgnoreCase(app.getStatus())) {
+                Pet pet = Database.getPetById(app.getPetId());
+                Adopter adopter = Database.getAdopterById(app.getAdopterId());
+                
+                Vector<Object> row = new Vector<>();
+                row.add(app.getApplicationId());
+                row.add(pet != null ? pet.getName() : "N/A");
+                row.add(adopter != null ? adopter.getName() : "N/A");
+                listModel.addRow(row);
+            }
+        }
+
+        // Add selection listener to update details
+        listTable.getSelectionModel().addListSelectionListener(e -> {
+            if (!e.getValueIsAdjusting() && listTable.getSelectedRow() != -1) {
+                int selectedRow = listTable.getSelectedRow();
+                int appId = (int) listModel.getValueAt(selectedRow, 0);
+                Application app = Database.getApplicationById(appId);
+                if (app != null) {
+                    Pet pet = Database.getPetById(app.getPetId());
+                    Adopter adopter = Database.getAdopterById(app.getAdopterId());
+
+                    // Update application details
+                    appIdField.setText(String.valueOf(app.getApplicationId()));
+
+                    // Update pet details
+                    if (pet != null) {
+                        petNameField.setText(pet.getName());
+                        petTypeField.setText(pet.getType());
+                        petBreedField.setText(pet.getBreed());
+                        petAgeField.setText(String.valueOf(pet.getAge()));
+                        petDescArea.setText(pet.getDescription());
+                    } else {
+                        petNameField.setText("N/A");
+                        petTypeField.setText("N/A");
+                        petBreedField.setText("N/A");
+                        petAgeField.setText("N/A");
+                        petDescArea.setText("N/A");
+                    }
+
+                    // Update adopter details
+                    if (adopter != null) {
+                        adopterNameField.setText(adopter.getName());
+                        contactField.setText(adopter.getContactInfo());
+                        // Fetch address, mobile, notes from Application object
+                        addressArea.setText(app.getAddress());
+                        mobileField.setText(app.getMobileNumber());
+                        notesArea.setText(app.getNotes());
+                    } else {
+                        adopterNameField.setText("N/A");
+                        contactField.setText("N/A");
+                        addressArea.setText("N/A"); // Clear if adopter not found
+                        mobileField.setText("N/A"); // Clear if adopter not found
+                        notesArea.setText("N/A");   // Clear if adopter not found
+                    }
+                }
+            }
+        });
 
         dialog.setVisible(true);
     }

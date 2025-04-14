@@ -44,7 +44,8 @@ public class MainFrame extends JFrame {
     private ApplicationController applicationController;
     private AdopterController adopterController;
 
-    private static final int CURRENT_ADOPTER_ID = 1;
+    // Store the currently logged-in adopter ID
+    private int currentAdopterId = -1; // Default to no adopter logged in
 
     // Colors
     private static final Color PRIMARY_COLOR = new Color(52, 152, 219);
@@ -240,6 +241,11 @@ public class MainFrame extends JFrame {
     }
 
     public void showPanel(String panelName) {
+        // Reset adopter context when returning to the main browse screen
+        if ("PetBrowse".equals(panelName)) {
+            resetCurrentAdopter();
+        }
+
         if (currentPanel != null && !panelName.equals("Welcome") && !panelName.equals("Login")) {
             previousPanel = currentPanel;
         }
@@ -280,8 +286,8 @@ public class MainFrame extends JFrame {
         // Refresh panel data if needed (keep this logic)
         if (adminPetPanel != null) adminPetPanel.refreshPetList();
         if (adminApplicationPanel != null) adminApplicationPanel.refreshApplicationList();
-        if (statusPanel != null) statusPanel.loadApplications(CURRENT_ADOPTER_ID);
-        if (preferencesPanel != null) preferencesPanel.loadPreferences(CURRENT_ADOPTER_ID);
+        if (statusPanel != null) statusPanel.loadApplications(currentAdopterId);
+        if (preferencesPanel != null) preferencesPanel.loadPreferences(currentAdopterId);
         if (matchedPetsPanel != null) matchedPetsPanel.clearMatchedPets();
         if (petBrowsePanel != null) petBrowsePanel.refreshPetList();
     }
@@ -301,7 +307,7 @@ public class MainFrame extends JFrame {
     }
 
     public int getCurrentAdopterId() {
-        return CURRENT_ADOPTER_ID;
+        return this.currentAdopterId;
     }
 
     public PetController getPetController() {
@@ -348,6 +354,23 @@ public class MainFrame extends JFrame {
         // Pass the pet details to the ApplicationPanel
         applicationPanel.setPetForApplication(pet);
         showPanel("Application");
+    }
+
+    // Method to reset the current adopter context
+    public void resetCurrentAdopter() {
+        System.out.println("Resetting current adopter ID.");
+        this.currentAdopterId = -1;
+        // Optionally clear adopter-specific data in panels if needed
+        // Example: applicationPanel.clearAdopterSpecificFields();
+    }
+
+    // Optional: Add a setter if login logic needs to set this
+    public void setCurrentAdopterId(int adopterId) {
+        System.out.println("Setting current adopter ID to: " + adopterId);
+        this.currentAdopterId = adopterId;
+        // Potentially load adopter info when ID is set
+        // Example: applicationPanel.loadAdopterInfo(this.currentAdopterId);
+        // Example: statusPanel.loadApplicationsForAdopter(this.currentAdopterId);
     }
 
     public static void main(String[] args) {

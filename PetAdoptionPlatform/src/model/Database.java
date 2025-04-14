@@ -376,6 +376,23 @@ public class Database {
         }
     }
 
+    public static boolean updateAdopter(Adopter adopter) throws SQLException {
+        String sql = "UPDATE Adopter SET name = ?, contact_info = ?, preferences = ?, address = ?, mobile_number = ?, notes = ? " +
+                     "WHERE adopter_id = ?";
+        try (Connection conn = getConnection();
+             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+            pstmt.setString(1, adopter.getName());
+            pstmt.setString(2, adopter.getContactInfo());
+            pstmt.setString(3, adopter.getPreferences());
+            pstmt.setString(4, adopter.getAddress());
+            pstmt.setString(5, adopter.getMobileNumber());
+            pstmt.setString(6, adopter.getNotes());
+            pstmt.setInt(7, adopter.getAdopterId());
+            int affectedRows = pstmt.executeUpdate();
+            return affectedRows > 0;
+        }
+    }
+
     public static boolean updateAdopterPreferences(int adopterId, String preferences) throws SQLException {
         String sql = "UPDATE Adopter SET preferences = ? WHERE adopter_id = ?";
         try (Connection conn = getConnection();

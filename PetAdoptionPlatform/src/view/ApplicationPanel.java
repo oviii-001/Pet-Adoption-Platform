@@ -10,6 +10,7 @@ import javax.swing.*;
 import javax.swing.border.*;
 import java.awt.*;
 import java.util.List;
+import java.sql.SQLException;
 
 public class ApplicationPanel extends JPanel {
     private ApplicationController applicationController;
@@ -246,9 +247,53 @@ public class ApplicationPanel extends JPanel {
             return;
         }
 
+        // --- Add/Update Adopter Logic ---
         int adopterId = mainFrame.getCurrentAdopterId();
+        Adopter adopter = null;
+        boolean isNewAdopter = false;
+
+        try {
+            if (adopterId > 0) {
+                // Try to get existing adopter
+                adopter = Database.getAdopterById(adopterId);
+                if (adopter != null) {
+                    // Update existing adopter's info
+                    adopter.setName(adopterName);
+                    adopter.setContactInfo(contactInfo);
+                    adopter.setAddress(address); // Update address in Adopter table too
+                    adopter.setMobileNumber(mobileNumber); // Update mobile in Adopter table too
+                    adopter.setNotes(notes); // Update notes in Adopter table too
+                    Database.updateAdopter(adopter);
+                } else {
+                    // Adopter ID exists but not found in DB? Error or create new.
+                    // For simplicity, let's assume we create a new one if ID is invalid
+                    adopterId = -1; // Reset ID to force creation
+                }
+            }
+
+            if (adopterId <= 0) { 
+                // Create new adopter
+                isNewAdopter = true;
+                adopter = new Adopter(0, adopterName, contactInfo, "", address, mobileNumber, notes);
+                adopterId = Database.addAdopter(adopter);
+                if (adopterId > 0) {
+                    // mainFrame.setCurrentAdopterId(adopterId); // Remove this line
+                } else {
+                    throw new SQLException("Failed to create new adopter record.");
+                }
+            }
+        } catch (SQLException ex) {
+            JOptionPane.showMessageDialog(this,
+                    "Database error while saving adopter details: " + ex.getMessage(),
+                    "Database Error", JOptionPane.ERROR_MESSAGE);
+            ex.printStackTrace();
+            return; // Stop submission if adopter saving failed
+        }
+        // --- End Adopter Logic ---
+
+        // Now create and submit the application with the correct adopter ID
         Application application = new Application(adopterId, currentPet.getPetId());
-        application.setAddress(address);
+        application.setAddress(address); // Keep these for the application record
         application.setMobileNumber(mobileNumber);
         application.setNotes(notes);
 
@@ -256,34 +301,30 @@ public class ApplicationPanel extends JPanel {
 
         if (success) {
             JOptionPane.showMessageDialog(this,
-                    "Your application has been submitted successfully!",
+                    "Application submitted successfully!",
                     "Success", JOptionPane.INFORMATION_MESSAGE);
-            // Reset form
-            currentPet = null;
-            petInfoLabel.setText("Applying for Pet ID: [Select from Browse]");
-            // Navigate to PetBrowse panel
-            mainFrame.getPetBrowsePanel().refreshPetList(); // Refresh pet list first
-            mainFrame.showPanel("PetBrowse"); // Then show the panel
+            clearFormFields(); // Clear the form after successful submission
+            mainFrame.showPanel("PetBrowse"); // Go back to browsing
         } else {
-            // Check if there's an existing application
-            List<Application> existingApps = applicationController.getApplicationsByAdopter(adopterId);
-            boolean hasExistingApp = existingApps.stream()
-                .anyMatch(app -> app.getPetId() == currentPet.getPetId() && 
-                    ("pending".equalsIgnoreCase(app.getStatus()) || 
-                     "approved".equalsIgnoreCase(app.getStatus())));
-
-            if (hasExistingApp) {
-                JOptionPane.showMessageDialog(this,
-                        "You already have an active application for this pet.",
-                        "Application Exists", JOptionPane.WARNING_MESSAGE);
-            } else {
-                JOptionPane.showMessageDialog(this,
-                        "Failed to submit application. The pet might no longer be available.",
-                        "Submission Failed", JOptionPane.ERROR_MESSAGE);
-            }
-            mainFrame.getPetBrowsePanel().refreshPetList(); // Refresh browse list
-            mainFrame.showPanel("PetBrowse"); // Return to browse panel
+            JOptionPane.showMessageDialog(this,
+                    "Failed to submit application. Please try again later or contact support.",
+                    "Error", JOptionPane.ERROR_MESSAGE);
         }
+    }
+
+    private void clearFormFields() {
+        // Clear fields, but maybe keep name/contact if user is "logged in"?
+        // For now, let's clear everything related to the application itself.
+        // Keep adopterNameField and contactInfoField if mainFrame.getCurrentAdopterId() > 0?
+        // Let's clear all for simplicity now.
+        adopterNameField.setText("");
+        contactInfoField.setText("");
+        addressField.setText("");
+        mobileNumberField.setText("");
+        notesField.setText("");
+        petInfoLabel.setText("Applying for Pet ID: [Select from Browse]");
+        currentPet = null;
+        currentPetId = -1;
     }
 
     // Custom rounded border class
