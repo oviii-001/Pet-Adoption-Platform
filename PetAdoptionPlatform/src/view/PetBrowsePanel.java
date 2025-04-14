@@ -49,6 +49,7 @@ public class PetBrowsePanel extends JPanel {
     private JComboBox<String> typeComboBox;
     private JComboBox<String> ageComboBox;
     private JComboBox<String> genderComboBox;
+    private JComboBox<String> statusComboBox;
 
     public PetBrowsePanel(MainFrame mainFrame, PetController petController) {
         this.mainFrame = mainFrame;
@@ -153,10 +154,13 @@ public class PetBrowsePanel extends JPanel {
         ageComboBox.addActionListener(filterActionListener);
         genderComboBox = new JComboBox<>(new String[]{"All Genders", "Male", "Female"});
         genderComboBox.addActionListener(filterActionListener);
+        statusComboBox = new JComboBox<>(new String[]{"All Statuses", "Available", "Pending", "Adopted"});
+        statusComboBox.addActionListener(filterActionListener);
 
         filterPanel.add(createFilterRow("Type:", typeComboBox));
         filterPanel.add(createFilterRow("Age:", ageComboBox));
         filterPanel.add(createFilterRow("Gender:", genderComboBox));
+        filterPanel.add(createFilterRow("Status:", statusComboBox));
 
         return filterPanel;
     }
@@ -255,6 +259,7 @@ public class PetBrowsePanel extends JPanel {
         String selectedType = (String) typeComboBox.getSelectedItem();
         String selectedAge = (String) ageComboBox.getSelectedItem();
         String selectedGender = (String) genderComboBox.getSelectedItem();
+        String selectedStatus = (String) statusComboBox.getSelectedItem();
         
         // Clear current pets
         petsPanel.removeAll();
@@ -264,9 +269,23 @@ public class PetBrowsePanel extends JPanel {
             .filter(pet -> selectedType.equals("All Types") || pet.getType().equals(selectedType))
             .filter(pet -> selectedAge.equals("All Ages") || matchesAgeCategory(pet.getAge(), selectedAge))
             .filter(pet -> selectedGender.equals("All Genders") || pet.getGender().equals(selectedGender))
+            .filter(pet -> selectedStatus.equals("All Statuses") || pet.getStatus().equalsIgnoreCase(selectedStatus))
             .collect(Collectors.toList());
-        
-        // Add filtered pets to panel
+
+        // Sort the filtered list: put adopted pets last
+        filteredPets.sort((pet1, pet2) -> {
+            boolean adopted1 = pet1.getStatus().equalsIgnoreCase("adopted");
+            boolean adopted2 = pet2.getStatus().equalsIgnoreCase("adopted");
+            if (adopted1 && !adopted2) {
+                return 1; // pet1 (adopted) comes after pet2
+            } else if (!adopted1 && adopted2) {
+                return -1; // pet1 comes before pet2 (adopted)
+            } else {
+                return 0; // Keep relative order for pets with same adoption status
+            }
+        });
+
+        // Add filtered and sorted pets to panel
         for (Pet pet : filteredPets) {
             petsPanel.add(createPetCard(pet));
         }
