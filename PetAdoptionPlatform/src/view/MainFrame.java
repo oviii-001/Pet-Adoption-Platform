@@ -62,6 +62,9 @@ public class MainFrame extends JFrame {
     // List of admin panel names
     private static final List<String> ADMIN_PANELS = Arrays.asList("AdminManagePets", "AdminManageApplications");
 
+    // Add navigation history stack
+    private java.util.Stack<String> navigationHistory = new java.util.Stack<>();
+
     // Getter methods for panels
     public StatusPanel getStatusPanel() {
         return statusPanel;
@@ -182,7 +185,33 @@ public class MainFrame extends JFrame {
         backButton.addActionListener(e -> {
             String currentPanel = getCurrentPanelName();
             if (!currentPanel.equals("Welcome") && !currentPanel.equals("Login")) {
-                showPanel("Welcome");
+                if (!navigationHistory.isEmpty()) {
+                    String previousPanel = navigationHistory.pop();
+                    // Skip Login panel when going back
+                    while (!navigationHistory.isEmpty() && previousPanel.equals("Login")) {
+                        previousPanel = navigationHistory.pop();
+                    }
+                    if (!previousPanel.equals("Login")) {
+                        cardLayout.show(mainPanel, previousPanel);
+                        this.currentPanel = previousPanel;
+                        updateRoleToggleButtonAppearance(previousPanel);
+                        backButton.setVisible(!previousPanel.equals("Welcome") && !previousPanel.equals("Login"));
+                    } else {
+                        showPanel("Welcome");
+                    }
+                } else {
+                    showPanel("Welcome");
+                }
+            }
+        });
+        backButton.addMouseListener(new MouseAdapter() {
+            @Override
+            public void mouseEntered(MouseEvent e) {
+                backButton.setBackground(PRIMARY_COLOR.darker());
+            }
+            @Override
+            public void mouseExited(MouseEvent e) {
+                backButton.setBackground(PRIMARY_COLOR);
             }
         });
         menuBar.add(backButton);
@@ -246,19 +275,23 @@ public class MainFrame extends JFrame {
             resetCurrentAdopter();
         }
 
-        if (currentPanel != null && !panelName.equals("Welcome") && !panelName.equals("Login")) {
-            previousPanel = currentPanel;
-        }
-        currentPanel = panelName;
-        cardLayout.show(mainPanel, panelName);
-        backButton.setVisible(!panelName.equals("Welcome") && !panelName.equals("Login"));
-        System.out.println("Showing panel: " + panelName);
-        // Update the button's appearance whenever a panel is shown
-        updateRoleToggleButtonAppearance(panelName);
+        // Don't add to history if it's the same panel
+        if (!panelName.equals(currentPanel)) {
+            // Store the current panel in history before changing
+            if (currentPanel != null && !currentPanel.equals("Welcome") && !currentPanel.equals("Login")) {
+                navigationHistory.push(currentPanel);
+            }
+            currentPanel = panelName;
+            cardLayout.show(mainPanel, panelName);
+            backButton.setVisible(!panelName.equals("Welcome") && !panelName.equals("Login"));
+            System.out.println("Showing panel: " + panelName);
+            // Update the button's appearance whenever a panel is shown
+            updateRoleToggleButtonAppearance(panelName);
 
-        // Refresh pet list when showing PetBrowse panel
-        if (panelName.equals("PetBrowse") && petBrowsePanel != null) {
-            petBrowsePanel.refreshPetList();
+            // Refresh pet list when showing PetBrowse panel
+            if (panelName.equals("PetBrowse") && petBrowsePanel != null) {
+                petBrowsePanel.refreshPetList();
+            }
         }
     }
 
