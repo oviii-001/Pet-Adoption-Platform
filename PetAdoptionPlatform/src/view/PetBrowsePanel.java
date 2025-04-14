@@ -20,6 +20,8 @@ import java.awt.Insets;
 import java.awt.event.ActionListener;
 import java.awt.event.ActionEvent;
 import javax.swing.border.Border;
+import java.net.URL;
+import java.awt.Image;
 
 public class PetBrowsePanel extends JPanel {
     private MainFrame mainFrame;
@@ -296,7 +298,6 @@ public class PetBrowsePanel extends JPanel {
                 BorderFactory.createLineBorder(new Color(200, 200, 200), 1),
                 BorderFactory.createEmptyBorder(10, 10, 10, 10)
         ));
-        card.setPreferredSize(new Dimension(250, 350));
 
         // Add shadow effect
         card.addMouseListener(new MouseAdapter() {
@@ -418,13 +419,85 @@ public class PetBrowsePanel extends JPanel {
             infoGBC.fill = GridBagConstraints.NONE;
             infoPanel.add(label, infoGBC);
 
-            JLabel value = new JLabel(valueText);
+            // Format valueText if it's the status label
+            String displayValue = valueText;
+            if (labelText.equals("Status:") && valueText != null && !valueText.isEmpty()) {
+                displayValue = valueText.substring(0, 1).toUpperCase() + valueText.substring(1).toLowerCase();
+            }
+
+            JLabel value = new JLabel(displayValue); // Use formatted displayValue
             value.setFont(PET_INFO_FONT);
             value.setForeground(TEXT_COLOR);
+
+            // Panel to hold icon + text for status if needed
+            JPanel statusDisplayPanel = null;
+
+            // Set status text color based on status and add icon if available
+            if (labelText.equals("Status:")) {
+                switch (valueText.toLowerCase()) {
+                    case "available":
+                        // Create a panel to hold icon and text
+                        statusDisplayPanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 3, 0)); // Small gap, no vertical gap
+                        statusDisplayPanel.setOpaque(false);
+
+                        // Create and add icon label using an image
+                        JLabel checkIconLabel = new JLabel();
+                        String iconPath = "/icons/checkmark.png"; // Path relative to classpath root (usually inside 'resources' folder)
+                        try {
+                            System.out.println("Attempting to load icon from classpath: " + iconPath);
+                            URL imgUrl = getClass().getResource(iconPath);
+                            if (imgUrl != null) {
+                                System.out.println("Icon URL found: " + imgUrl);
+                                ImageIcon originalIcon = new ImageIcon(imgUrl);
+                                // Scale the icon to fit the text size (adjust size as needed)
+                                Image scaledImage = originalIcon.getImage().getScaledInstance(14, 14, Image.SCALE_SMOOTH);
+                                checkIconLabel.setIcon(new ImageIcon(scaledImage));
+                                System.out.println("Icon loaded and scaled successfully.");
+                            } else {
+                                System.err.println("Error: Checkmark icon not found at classpath path: " + iconPath);
+                                System.err.println("Please ensure 'checkmark.png' exists in a directory configured as a resource root (e.g., 'resources/icons/')");
+                                checkIconLabel.setText("✓"); // Fallback to simpler checkmark text
+                                checkIconLabel.setForeground(new Color(34, 139, 34));
+                                checkIconLabel.setFont(PET_INFO_FONT.deriveFont(Font.BOLD));
+                            }
+                        } catch (Exception e) {
+                            System.err.println("Error loading checkmark icon from path " + iconPath + ": " + e.getMessage());
+                            e.printStackTrace(); // Print stack trace for detailed debugging
+                            checkIconLabel.setText("✓"); // Fallback on error
+                            checkIconLabel.setForeground(new Color(34, 139, 34));
+                            checkIconLabel.setFont(PET_INFO_FONT.deriveFont(Font.BOLD));
+                        }
+                        statusDisplayPanel.add(checkIconLabel);
+
+                        // Configure value label (text and color)
+                        value.setForeground(new Color(34, 139, 34)); // Forest Green
+                        value.setFont(PET_INFO_FONT.deriveFont(Font.BOLD)); // Make text bold
+                        break;
+                    // Optional: Add cases for other statuses if needed
+                    // case "adopted":
+                    //    value.setForeground(Color.GRAY);
+                    //    break;
+                    // case "pending":
+                    //    value.setForeground(new Color(230, 126, 34)); // Orange
+                    //    break;
+                    default:
+                         // Keep default text color or set others
+                         value.setForeground(TEXT_COLOR);
+                         value.setFont(PET_INFO_FONT); // Ensure non-available statuses use the standard font
+                         break;
+                }
+            }
+
             infoGBC.gridx = 1;
             infoGBC.weightx = 1.0;
             infoGBC.fill = GridBagConstraints.HORIZONTAL;
-            infoPanel.add(value, infoGBC);
+            // Add the appropriate component to the infoPanel
+            if (statusDisplayPanel != null) {
+                 statusDisplayPanel.add(value); // Add the value label to the panel with the icon
+                 infoPanel.add(statusDisplayPanel, infoGBC);
+            } else {
+                 infoPanel.add(value, infoGBC); // Add only the value label directly
+            }
         };
 
         addInfoRow.accept("Breed:", pet.getBreed());
