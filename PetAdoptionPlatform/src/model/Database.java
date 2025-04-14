@@ -477,14 +477,14 @@ public class Database {
 
     public static boolean updateApplicationStatus(int applicationId, String status) throws SQLException {
         String sql = "UPDATE Application SET status = ? WHERE application_id = ?";
-        try (Connection conn = getConnection();
-             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+        Connection conn = getConnection(); // Get the connection outside try-with-resources
+        try (PreparedStatement pstmt = conn.prepareStatement(sql)) {
             pstmt.setString(1, status);
             pstmt.setInt(2, applicationId);
             int affectedRows = pstmt.executeUpdate();
 
             if (affectedRows > 0) {
-                Application app = getApplicationById(applicationId);
+                Application app = getApplicationById(applicationId); // This needs connection too
                 if (app != null) {
                     if ("approved".equalsIgnoreCase(status)) {
                         updatePetStatus(app.getPetId(), "adopted");
@@ -493,7 +493,7 @@ public class Database {
                     } else if ("rejected".equalsIgnoreCase(status)) {
                         // Check if there are any other pending applications for this pet
                         String checkPendingSql = "SELECT COUNT(*) FROM Application WHERE pet_id = ? AND status = 'pending' AND application_id != ?";
-                        try (PreparedStatement checkStmt = conn.prepareStatement(checkPendingSql)) {
+                        try (PreparedStatement checkStmt = conn.prepareStatement(checkPendingSql)) { // Use the same connection
                             checkStmt.setInt(1, app.getPetId());
                             checkStmt.setInt(2, applicationId);
                             ResultSet rs = checkStmt.executeQuery();
@@ -501,36 +501,43 @@ public class Database {
                                 // No other pending applications, set pet back to available
                                 updatePetStatus(app.getPetId(), "available");
                             }
-                        }
+                        } // checkStmt and rs are closed here
                     }
                 }
             }
 
             return affectedRows > 0;
         }
+        // Do NOT close the shared connection here
     }
 
     // Helper to get a single application (needed for status update logic)
     public static Application getApplicationById(int applicationId) {
         String sql = "SELECT * FROM Application WHERE application_id = ?";
-        try (Connection conn = getConnection();
-             PreparedStatement pstmt = conn.prepareStatement(sql)) {
-            pstmt.setInt(1, applicationId);
-            ResultSet rs = pstmt.executeQuery();
-            if (rs.next()) {
-                return new Application(
-                        rs.getInt("application_id"),
-                        rs.getInt("adopter_id"),
-                        rs.getInt("pet_id"),
-                        rs.getString("status"),
-                        rs.getString("address"),
-                        rs.getString("mobile_number"),
-                        rs.getString("notes")
-                );
-            }
+        Application application = null;
+        try { // Removed Connection from try-with-resources
+            Connection conn = getConnection();
+            try (PreparedStatement pstmt = conn.prepareStatement(sql)) {
+                pstmt.setInt(1, applicationId);
+                try (ResultSet rs = pstmt.executeQuery()) {
+                    if (rs.next()) {
+                        application = new Application(
+                                rs.getInt("application_id"),
+                                rs.getInt("adopter_id"),
+                                rs.getInt("pet_id"),
+                                rs.getString("status"),
+                                rs.getString("address"),
+                                rs.getString("mobile_number"),
+                                rs.getString("notes")
+                        );
+                    }
+                } // rs is closed here
+            } // pstmt is closed here
         } catch (SQLException e) {
             System.err.println("Error fetching application by ID: " + e.getMessage());
+            e.printStackTrace(); // Also print stack trace here for better debugging
         }
-        return null;
+        // Do NOT close the shared connection here
+        return application;
     }
 }

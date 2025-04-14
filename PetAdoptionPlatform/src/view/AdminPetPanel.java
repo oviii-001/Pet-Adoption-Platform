@@ -414,6 +414,9 @@ public class AdminPetPanel extends JPanel {
          // Clear selection and form after refresh
         petTable.clearSelection();
         clearForm();
+        
+        // Update application count
+        updateApplicationCount();
     }
 
     private void populateFormFromSelectedRow() {
@@ -757,6 +760,7 @@ public class AdminPetPanel extends JPanel {
                 }
             } catch (SQLException ex) {
                 JOptionPane.showMessageDialog(dialog, "Database error: " + ex.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
+                ex.printStackTrace(); // Print stack trace for detailed debugging
             }
         });
 
@@ -777,6 +781,7 @@ public class AdminPetPanel extends JPanel {
                 }
             } catch (SQLException ex) {
                 JOptionPane.showMessageDialog(dialog, "Database error: " + ex.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
+                ex.printStackTrace(); // Print stack trace for detailed debugging
             }
         });
 
