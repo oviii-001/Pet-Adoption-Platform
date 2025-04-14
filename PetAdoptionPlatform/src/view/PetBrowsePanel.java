@@ -27,14 +27,16 @@ public class PetBrowsePanel extends JPanel {
     private JPanel petsPanel;
 
     // Colors
-    private static final Color PRIMARY_COLOR = new Color(52, 152, 219);
+    private static final Color PRIMARY_COLOR = new Color(41, 128, 185); // Darker blue for better contrast
     private static final Color SECONDARY_COLOR = new Color(231, 76, 60);
     private static final Color BACKGROUND_COLOR = new Color(240, 240, 240);
     private static final Color TEXT_COLOR = new Color(44, 62, 80);
     private static final Color CARD_COLOR = Color.WHITE;
     private static final Color BORDER_COLOR = new Color(200, 200, 200);
     private static final Color SHADOW_COLOR = new Color(0, 0, 0, 50); // Shadow color
-    private static final Color HOVER_BORDER_COLOR = new Color(52, 152, 219); // Border color on hover
+    private static final Color HOVER_BORDER_COLOR = new Color(41, 128, 185); // Border color on hover
+    private static final Color SUCCESS_COLOR = new Color(120, 120, 120); // Gray color for adopted pets
+    private static final Color PENDING_COLOR = new Color(230, 126, 34); // Brighter orange for pending
 
     // Fonts
     private static final Font TITLE_FONT = new Font("Segoe UI", Font.BOLD, 36); // Increased title font size
@@ -441,29 +443,50 @@ public class PetBrowsePanel extends JPanel {
         applyButton.setFont(BUTTON_FONT);
         applyButton.setFocusPainted(false);
         applyButton.setCursor(new Cursor(Cursor.HAND_CURSOR));
+        applyButton.setOpaque(true); // Make button opaque
+        applyButton.setBorderPainted(false); // Remove border
 
-        if ("available".equalsIgnoreCase(pet.getStatus())) {
-            applyButton.setBackground(PRIMARY_COLOR);
-            applyButton.setForeground(Color.WHITE);
-            applyButton.addActionListener(e -> {
-                System.out.println("View Details clicked for pet ID: " + pet.getPetId());
-                mainFrame.showPetDetails(pet);
-            });
-            applyButton.addMouseListener(new MouseAdapter() {
-                @Override
-                public void mouseEntered(MouseEvent e) {
-                    applyButton.setBackground(PRIMARY_COLOR.darker());
-                }
-                @Override
-                public void mouseExited(MouseEvent e) {
-                    applyButton.setBackground(PRIMARY_COLOR);
-                }
-            });
-        } else {
-            applyButton.setBackground(Color.LIGHT_GRAY);
-            applyButton.setForeground(Color.DARK_GRAY);
-            applyButton.setText(pet.getStatus().substring(0, 1).toUpperCase() + pet.getStatus().substring(1));
-            applyButton.setEnabled(false);
+        switch (pet.getStatus().toLowerCase()) {
+            case "available":
+                applyButton.setBackground(PRIMARY_COLOR);
+                applyButton.setForeground(new Color(255, 255, 255));
+                applyButton.setText("View Details / Apply");
+                applyButton.addActionListener(e -> {
+                    System.out.println("View Details clicked for pet ID: " + pet.getPetId());
+                    mainFrame.showPetDetails(pet);
+                });
+                applyButton.addMouseListener(new MouseAdapter() {
+                    @Override
+                    public void mouseEntered(MouseEvent e) {
+                        applyButton.setBackground(PRIMARY_COLOR.darker());
+                    }
+                    @Override
+                    public void mouseExited(MouseEvent e) {
+                        applyButton.setBackground(PRIMARY_COLOR);
+                    }
+                });
+                break;
+            case "adopted":
+                applyButton.setBackground(new Color(128, 128, 128)); // Medium gray
+                applyButton.setForeground(new Color(255, 255, 255));
+                applyButton.setText("Adopted");
+                applyButton.setEnabled(true); // Keep enabled to maintain color
+                applyButton.setFocusable(false);
+                break;
+            case "pending":
+                applyButton.setBackground(new Color(240, 147, 43)); // Bright orange
+                applyButton.setForeground(new Color(255, 255, 255));
+                applyButton.setText("Application Pending");
+                applyButton.setEnabled(true); // Keep enabled to maintain color
+                applyButton.setFocusable(false);
+                break;
+            default:
+                applyButton.setBackground(new Color(200, 200, 200));
+                applyButton.setForeground(new Color(60, 60, 60));
+                applyButton.setText(pet.getStatus().substring(0, 1).toUpperCase() + pet.getStatus().substring(1));
+                applyButton.setEnabled(true);
+                applyButton.setFocusable(false);
+                break;
         }
         applyButton.setBorder(BorderFactory.createEmptyBorder(10, 15, 10, 15));
 
