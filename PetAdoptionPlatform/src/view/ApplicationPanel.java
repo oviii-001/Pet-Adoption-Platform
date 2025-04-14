@@ -2,6 +2,9 @@ package view;
 
 import controller.ApplicationController;
 import model.Application;
+import model.Pet;
+import model.Adopter;
+import model.Database;
 
 import javax.swing.*;
 import javax.swing.border.*;
@@ -38,6 +41,7 @@ public class ApplicationPanel extends JPanel {
     private static final Font BUTTON_FONT = new Font("Segoe UI", Font.BOLD, 14);
 
     private int currentPetId = -1;
+    private Pet currentPet = null;
 
     public ApplicationPanel(ApplicationController controller, MainFrame frame) {
         this.applicationController = controller;
@@ -188,7 +192,7 @@ public class ApplicationPanel extends JPanel {
 
     // Method to pre-fill adopter info if possible
     private void loadAdopterInfo(int adopterId) {
-        model.Adopter adopter = model.Database.getAdopterById(adopterId);
+        Adopter adopter = Database.getAdopterById(adopterId);
         if (adopter != null) {
             adopterNameField.setText(adopter.getName());
             contactInfoField.setText(adopter.getContactInfo());
@@ -206,20 +210,23 @@ public class ApplicationPanel extends JPanel {
     }
 
     // Called by MainFrame when navigating here
-    public void setPetToApplyFor(int petId) {
-        this.currentPetId = petId;
-        model.Pet pet = model.Database.getPetById(petId); // Fetch pet details for display
-        if (pet != null) {
-            petInfoLabel.setText("Applying for: " + pet.getName() + " (ID: " + pet.getPetId() + ", Type: " + pet.getType() + ")");
+    public void setPetForApplication(Pet pet) {
+        this.currentPet = pet;
+        if (this.currentPet != null) {
+            this.currentPetId = this.currentPet.getPetId();
+            petInfoLabel.setText("Applying for: " + this.currentPet.getName() +
+                               " (ID: " + this.currentPet.getPetId() +
+                               ", Type: " + this.currentPet.getType() + ")");
         } else {
-            petInfoLabel.setText("Applying for Pet ID: " + petId + " (Details not found!)");
+            this.currentPetId = -1;
+            petInfoLabel.setText("Applying for Pet ID: [Error - Pet not provided]");
         }
-        // Re-load adopter info when setting a pet, in case user context is needed
+        // Re-load adopter info when setting a pet
         loadAdopterInfo(mainFrame.getCurrentAdopterId());
     }
 
     private void submitApplication() {
-        if (currentPetId == -1) {
+        if (currentPet == null) {
             JOptionPane.showMessageDialog(this,
                     "No pet selected. Please go back and select a pet to apply for.",
                     "Error", JOptionPane.ERROR_MESSAGE);
@@ -239,11 +246,8 @@ public class ApplicationPanel extends JPanel {
             return;
         }
 
-        // Use the hardcoded adopter ID from MainFrame
         int adopterId = mainFrame.getCurrentAdopterId();
-
-        // Create application with additional fields
-        Application application = new Application(adopterId, currentPetId);
+        Application application = new Application(adopterId, currentPet.getPetId());
         application.setAddress(address);
         application.setMobileNumber(mobileNumber);
         application.setNotes(notes);
@@ -255,7 +259,7 @@ public class ApplicationPanel extends JPanel {
                     "Your application has been submitted successfully!",
                     "Success", JOptionPane.INFORMATION_MESSAGE);
             // Reset form
-            currentPetId = -1;
+            currentPet = null;
             petInfoLabel.setText("Applying for Pet ID: [Select from Browse]");
             // Navigate to PetBrowse panel
             mainFrame.getPetBrowsePanel().refreshPetList(); // Refresh pet list first
@@ -264,7 +268,7 @@ public class ApplicationPanel extends JPanel {
             // Check if there's an existing application
             List<Application> existingApps = applicationController.getApplicationsByAdopter(adopterId);
             boolean hasExistingApp = existingApps.stream()
-                .anyMatch(app -> app.getPetId() == currentPetId && 
+                .anyMatch(app -> app.getPetId() == currentPet.getPetId() && 
                     ("pending".equalsIgnoreCase(app.getStatus()) || 
                      "approved".equalsIgnoreCase(app.getStatus())));
 

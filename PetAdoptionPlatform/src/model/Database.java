@@ -199,13 +199,14 @@ public class Database {
 
 
     public static Pet getPetById(int petId) {
+        System.out.println("Getting pet by ID: " + petId);
         String sql = "SELECT * FROM Pet WHERE pet_id = ?";
         try (Connection conn = getConnection();
              PreparedStatement pstmt = conn.prepareStatement(sql)) {
             pstmt.setInt(1, petId);
             ResultSet rs = pstmt.executeQuery();
             if (rs.next()) {
-                return new Pet(
+                Pet pet = new Pet(
                         rs.getInt("pet_id"),
                         rs.getString("name"),
                         rs.getString("type"),
@@ -219,7 +220,12 @@ public class Database {
                         rs.getString("temperament"),
                         rs.getBytes("image_data")
                 );
+                System.out.println("Retrieved pet - ID: " + pet.getPetId() + 
+                                 ", Name: " + pet.getName() + 
+                                 ", Status: " + pet.getStatus());
+                return pet;
             }
+            System.out.println("No pet found with ID: " + petId);
         } catch (SQLException e) {
             System.err.println("Error fetching pet by ID: " + e.getMessage());
         }
@@ -271,13 +277,44 @@ public class Database {
     }
 
     public static boolean updatePetStatus(int petId, String status) throws SQLException {
-        String sql = "UPDATE Pet SET status = ? WHERE pet_id = ?";
-        try (Connection conn = getConnection();
-             PreparedStatement pstmt = conn.prepareStatement(sql)) {
-            pstmt.setString(1, status);
-            pstmt.setInt(2, petId);
-            int affectedRows = pstmt.executeUpdate();
-            return affectedRows > 0;
+        Connection conn = null;
+        try {
+            conn = getConnection();
+            conn.setAutoCommit(false); // Start transaction
+            
+            System.out.println("Updating pet status - Pet ID: " + petId + ", New Status: " + status);
+            
+            // If status is being changed to available, reject all pending applications for this pet
+            if ("available".equalsIgnoreCase(status)) {
+                System.out.println("Status is 'available', checking for pending applications");
+                String rejectAppsSql = "UPDATE Application SET status = 'rejected' WHERE pet_id = ? AND status = 'pending'";
+                try (PreparedStatement pstmt = conn.prepareStatement(rejectAppsSql)) {
+                    pstmt.setInt(1, petId);
+                    int updatedRows = pstmt.executeUpdate();
+                    System.out.println("Rejected " + updatedRows + " pending applications for pet " + petId);
+                }
+            }
+            
+            String sql = "UPDATE Pet SET status = ? WHERE pet_id = ?";
+            try (PreparedStatement pstmt = conn.prepareStatement(sql)) {
+                pstmt.setString(1, status);
+                pstmt.setInt(2, petId);
+                int affectedRows = pstmt.executeUpdate();
+                System.out.println("Updated pet status - Affected rows: " + affectedRows);
+                conn.commit(); // Commit transaction
+                return affectedRows > 0;
+            }
+        } catch (SQLException e) {
+            if (conn != null) {
+                conn.rollback(); // Rollback on error
+                System.err.println("Error in updatePetStatus transaction, rolling back: " + e.getMessage());
+            }
+            throw e;
+        } finally {
+            if (conn != null) {
+                conn.setAutoCommit(true); // Reset auto-commit
+                conn.close(); // Close connection
+            }
         }
     }
 

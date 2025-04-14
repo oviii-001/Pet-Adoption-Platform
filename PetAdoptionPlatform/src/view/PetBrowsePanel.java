@@ -445,7 +445,10 @@ public class PetBrowsePanel extends JPanel {
         if ("available".equalsIgnoreCase(pet.getStatus())) {
             applyButton.setBackground(PRIMARY_COLOR);
             applyButton.setForeground(Color.WHITE);
-            applyButton.addActionListener(e -> mainFrame.navigateToApplicationForm(pet.getPetId()));
+            applyButton.addActionListener(e -> {
+                System.out.println("View Details clicked for pet ID: " + pet.getPetId());
+                mainFrame.showPetDetails(pet);
+            });
             applyButton.addMouseListener(new MouseAdapter() {
                 @Override
                 public void mouseEntered(MouseEvent e) {

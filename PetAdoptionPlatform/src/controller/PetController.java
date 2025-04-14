@@ -59,6 +59,19 @@ public class PetController {
         }
     }
 
+    public boolean updatePetStatus(int petId, String status) {
+        try {
+            System.out.println("Updating pet status - Pet ID: " + petId + ", New Status: " + status);
+            boolean success = Database.updatePetStatus(petId, status);
+            System.out.println("Update result: " + (success ? "Success" : "Failed"));
+            return success;
+        } catch (SQLException e) {
+            System.err.println("Error updating pet status via controller: " + e.getMessage());
+            e.printStackTrace();
+            return false;
+        }
+    }
+
     // --- Pet Matching Logic ---
     public List<Pet> findMatchingPets(String preferencesString) {
         if (preferencesString == null || preferencesString.trim().isEmpty()) {

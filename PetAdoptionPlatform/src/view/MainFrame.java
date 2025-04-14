@@ -5,6 +5,7 @@ import controller.PetController;
 import controller.AdopterController;
 import model.Pet;
 import model.Database;
+import view.PetDetailsPanel;
 
 import javax.swing.*;
 import java.awt.*;
@@ -36,6 +37,7 @@ public class MainFrame extends JFrame {
     protected AdminPetPanel adminPetPanel;
     protected AdminApplicationPanel adminApplicationPanel;
     protected WelcomePanel welcomePanel;
+    protected PetDetailsPanel petDetailsPanel;
 
     // Controllers
     private PetController petController;
@@ -287,7 +289,7 @@ public class MainFrame extends JFrame {
     public void navigateToApplicationForm(int petId) {
         Pet pet = petController.getPetById(petId);
         if (pet != null && "available".equalsIgnoreCase(pet.getStatus())) {
-            applicationPanel.setPetToApplyFor(petId);
+            applicationPanel.setPetForApplication(pet);
             showPanel("Application");
         } else {
             JOptionPane.showMessageDialog(this,
@@ -312,6 +314,40 @@ public class MainFrame extends JFrame {
 
     public ApplicationController getApplicationController() {
         return applicationController;
+    }
+
+    // Method to show the Pet Details Panel
+    public void showPetDetails(Pet pet) {
+        if (pet == null) {
+            System.err.println("Cannot show details for a null pet.");
+            // Optionally show an error message to the user
+            // JOptionPane.showMessageDialog(this, "Could not load pet details.", "Error", JOptionPane.ERROR_MESSAGE);
+            return;
+        }
+        // Remove the previous details panel if it exists to avoid stale data
+        if (petDetailsPanel != null) {
+            mainPanel.remove(petDetailsPanel);
+        }
+        // Create a new instance with the selected pet and reference to MainFrame
+        petDetailsPanel = new PetDetailsPanel(pet, this);
+        mainPanel.add(petDetailsPanel, "PetDetails"); // Add with a unique name
+        showPanel("PetDetails"); // Show the newly added panel
+    }
+
+    // Method to show the Application Form Panel for a specific pet
+    public void showApplicationForm(Pet pet) {
+        if (pet == null) {
+            System.err.println("Cannot show application form for a null pet.");
+            return;
+        }
+        // Ensure ApplicationPanel is initialized
+        if (applicationPanel == null) {
+            applicationPanel = new ApplicationPanel(applicationController, this);
+            mainPanel.add(applicationPanel, "Application");
+        }
+        // Pass the pet details to the ApplicationPanel
+        applicationPanel.setPetForApplication(pet);
+        showPanel("Application");
     }
 
     public static void main(String[] args) {

@@ -556,41 +556,47 @@ public class AdminPetPanel extends JPanel {
             String health = healthStatusField.getText();
             String temper = temperamentField.getText();
 
-             if (name.isEmpty()) {
-                 JOptionPane.showMessageDialog(this, "Pet name cannot be empty.", "Input Error", JOptionPane.WARNING_MESSAGE);
-                 return;
-            }
-
-            // Use selectedImageData if available, otherwise keep existing (handled in controller/DB? No, need to fetch here)
-            byte[] imageDataToSave = null; // Start with null
-
-            // Get existing pet data to check current image
+            // Get existing pet to compare changes
             Pet existingPet = petController.getPetById(petId);
-            byte[] existingImageData = (existingPet != null) ? existingPet.getImageData() : null;
-
-            // selectedImageData holds the data from the form.
-            // If populateFormFromSelectedRow was called, it holds the existing image data.
-            // If selectImage was called after that, it holds the NEW image data.
-            // If clearForm was called, it holds null.
-
-            // We need to know if the data in selectedImageData is DIFFERENT from existingImageData
-            // OR if existingImageData was null and selectedImageData is now populated.
-            // Comparing byte arrays directly with .equals() doesn't work as expected.
-            // A simple check: Is selectedImageData different from the initially populated data?
-
-            // Let's refine: We only want to save selectedImageData IF it was populated by selectImage AFTER populateFormFromSelectedRow.
-            // This state is hard to track. Let's simplify:
-            // If selectedImageData is not null, save it. Otherwise, save the existing data.
-            // This assumes if the user clears the form/image, selectedImageData becomes null.
-
-            if (selectedImageData != null) {
-                 imageDataToSave = selectedImageData;
-            } else if (existingPet != null) {
-                 imageDataToSave = existingPet.getImageData(); // Keep old image if nothing new selected/previewed
+            if (existingPet == null) {
+                JOptionPane.showMessageDialog(this, "Could not find the selected pet in the database.", "Error", JOptionPane.ERROR_MESSAGE);
+                return;
             }
-             // If selectedImageData is null AND existingPet is null/has no image, imageDataToSave remains null.
-            
-            System.out.println("[AdminPetPanel - updatePet] Image data to save length: " + (imageDataToSave != null ? imageDataToSave.length : "null"));
+
+            System.out.println("Comparing changes for pet ID: " + petId);
+            System.out.println("Current status: " + existingPet.getStatus() + ", New status: " + status);
+
+            // If only status is changed, use updatePetStatus
+            if (name.equals(existingPet.getName()) &&
+                type.equals(existingPet.getType()) &&
+                size.equals(existingPet.getSize()) &&
+                age == existingPet.getAge() &&
+                description.equals(existingPet.getDescription()) &&
+                gender.equals(existingPet.getGender()) &&
+                breed.equals(existingPet.getBreed()) &&
+                health.equals(existingPet.getHealthStatus()) &&
+                temper.equals(existingPet.getTemperament()) &&
+                !status.equals(existingPet.getStatus())) {
+                
+                System.out.println("Only status changed, using updatePetStatus");
+                boolean success = petController.updatePetStatus(petId, status);
+                if (success) {
+                    refreshPetList();
+                    JOptionPane.showMessageDialog(this, "Pet status updated successfully!", "Success", JOptionPane.INFORMATION_MESSAGE);
+                } else {
+                    JOptionPane.showMessageDialog(this, "Failed to update pet status. Check database connection or logs.", "Error", JOptionPane.ERROR_MESSAGE);
+                }
+                return;
+            }
+
+            System.out.println("Multiple fields changed, using full update");
+            // For other changes, use the full update
+            byte[] imageDataToSave = null;
+            if (selectedImageData != null) {
+                imageDataToSave = selectedImageData;
+            } else if (existingPet != null) {
+                imageDataToSave = existingPet.getImageData();
+            }
 
             Pet updatedPet = new Pet(petId, name, type, size, age, description, status, gender, breed, health, temper, imageDataToSave);
             boolean success = petController.updatePet(updatedPet);
