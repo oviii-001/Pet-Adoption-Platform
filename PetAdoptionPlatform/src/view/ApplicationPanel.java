@@ -33,6 +33,8 @@ public class ApplicationPanel extends JPanel {
     private static final Color BORDER_COLOR = new Color(229, 231, 235);    // Light gray
     private static final Color SUCCESS_COLOR = new Color(16, 185, 129);    // Green
     private static final Color FIELD_BACKGROUND = Color.WHITE;
+    private static final Color MANDATORY_BORDER_COLOR = new Color(255, 99, 71);
+    private static final String REQUIRED_FIELD_INDICATOR = " *";
     
     // Modern fonts
     private static final Font TITLE_FONT = new Font("Segoe UI", Font.BOLD, 28);
@@ -105,11 +107,11 @@ public class ApplicationPanel extends JPanel {
         int row = 0;
         
         // Form fields
-        addFormField(panel, "Your Name:", adopterNameField = createTextField(), gbc, row++);
-        addFormField(panel, "Email:", contactInfoField = createTextField(), gbc, row++);
-        addFormField(panel, "Mobile Number:", mobileNumberField = createTextField(), gbc, row++);
-        addFormField(panel, "Address:", addressField = createTextArea(), gbc, row++);
-        addFormField(panel, "Notes:", notesField = createTextArea(), gbc, row++);
+        addFormField(panel, "Name" + REQUIRED_FIELD_INDICATOR, adopterNameField = createTextField(), gbc, row++);
+        addFormField(panel, "Email" + REQUIRED_FIELD_INDICATOR, contactInfoField = createTextField(), gbc, row++);
+        addFormField(panel, "Mobile Number" + REQUIRED_FIELD_INDICATOR, mobileNumberField = createTextField(), gbc, row++);
+        addFormField(panel, "Address" + REQUIRED_FIELD_INDICATOR, addressField = createTextArea(), gbc, row++);
+        addFormField(panel, "Notes (Optional):", notesField = createTextArea(), gbc, row++);
         
         // Add empty space at bottom
         gbc.weighty = 1.0;
@@ -229,21 +231,46 @@ public class ApplicationPanel extends JPanel {
     private void submitApplication() {
         if (currentPet == null) {
             JOptionPane.showMessageDialog(this,
-                    "No pet selected. Please go back and select a pet to apply for.",
-                    "Error", JOptionPane.ERROR_MESSAGE);
+                "Please select a pet before submitting the application.",
+                "No Pet Selected",
+                JOptionPane.WARNING_MESSAGE);
             return;
         }
 
-        String adopterName = adopterNameField.getText().trim();
-        String contactInfo = contactInfoField.getText().trim();
-        String address = addressField.getText().trim();
-        String mobileNumber = mobileNumberField.getText().trim();
-        String notes = notesField.getText().trim();
-
-        if (adopterName.isEmpty() || contactInfo.isEmpty() || address.isEmpty() || mobileNumber.isEmpty()) {
+        // Validate required fields
+        if (adopterNameField.getText().trim().isEmpty()) {
             JOptionPane.showMessageDialog(this,
-                    "Please enter all required information (Name, Email, Address, and Mobile Number).",
-                    "Missing Information", JOptionPane.WARNING_MESSAGE);
+                "Name is a required field. Please enter your full name.",
+                "Required Field Missing",
+                JOptionPane.WARNING_MESSAGE);
+            adopterNameField.requestFocus();
+            return;
+        }
+
+        if (contactInfoField.getText().trim().isEmpty()) {
+            JOptionPane.showMessageDialog(this,
+                "Email is a required field. Please enter a valid email address.",
+                "Required Field Missing",
+                JOptionPane.WARNING_MESSAGE);
+            contactInfoField.requestFocus();
+            return;
+        }
+
+        if (mobileNumberField.getText().trim().isEmpty()) {
+            JOptionPane.showMessageDialog(this,
+                "Mobile number is a required field. Please enter a valid contact number.",
+                "Required Field Missing",
+                JOptionPane.WARNING_MESSAGE);
+            mobileNumberField.requestFocus();
+            return;
+        }
+
+        if (addressField.getText().trim().isEmpty()) {
+            JOptionPane.showMessageDialog(this,
+                "Address is a required field. Please enter your complete address.",
+                "Required Field Missing",
+                JOptionPane.WARNING_MESSAGE);
+            addressField.requestFocus();
             return;
         }
 
@@ -258,11 +285,11 @@ public class ApplicationPanel extends JPanel {
                 adopter = Database.getAdopterById(adopterId);
                 if (adopter != null) {
                     // Update existing adopter's info
-                    adopter.setName(adopterName);
-                    adopter.setContactInfo(contactInfo);
-                    adopter.setAddress(address); // Update address in Adopter table too
-                    adopter.setMobileNumber(mobileNumber); // Update mobile in Adopter table too
-                    adopter.setNotes(notes); // Update notes in Adopter table too
+                    adopter.setName(adopterNameField.getText().trim());
+                    adopter.setContactInfo(contactInfoField.getText().trim());
+                    adopter.setAddress(addressField.getText().trim()); // Update address in Adopter table too
+                    adopter.setMobileNumber(mobileNumberField.getText().trim()); // Update mobile in Adopter table too
+                    adopter.setNotes(notesField.getText().trim()); // Update notes in Adopter table too
                     Database.updateAdopter(adopter);
                 } else {
                     // Adopter ID exists but not found in DB? Error or create new.
@@ -274,7 +301,7 @@ public class ApplicationPanel extends JPanel {
             if (adopterId <= 0) { 
                 // Create new adopter
                 isNewAdopter = true;
-                adopter = new Adopter(0, adopterName, contactInfo, "", address, mobileNumber, notes);
+                adopter = new Adopter(0, adopterNameField.getText().trim(), contactInfoField.getText().trim(), "", addressField.getText().trim(), mobileNumberField.getText().trim(), notesField.getText().trim());
                 adopterId = Database.addAdopter(adopter);
                 if (adopterId > 0) {
                     // mainFrame.setCurrentAdopterId(adopterId); // Remove this line
@@ -293,9 +320,9 @@ public class ApplicationPanel extends JPanel {
 
         // Now create and submit the application with the correct adopter ID
         Application application = new Application(adopterId, currentPet.getPetId());
-        application.setAddress(address); // Keep these for the application record
-        application.setMobileNumber(mobileNumber);
-        application.setNotes(notes);
+        application.setAddress(addressField.getText().trim()); // Keep these for the application record
+        application.setMobileNumber(mobileNumberField.getText().trim());
+        application.setNotes(notesField.getText().trim());
 
         boolean success = applicationController.submitApplication(application);
 
