@@ -2,7 +2,7 @@ package view;
 
 import controller.ApplicationController;
 import model.Application;
-import model.Database; // To get Pet/Adopter names
+import model.Database;
 import model.Pet;
 import model.Adopter;
 
@@ -31,7 +31,7 @@ public class StatusPanel extends JPanel {
         tableModel = new DefaultTableModel(columnNames, 0){
             @Override
             public boolean isCellEditable(int row, int column) {
-                return false; // Non-editable
+                return false; 
             }
         };
         statusTable = new JTable(tableModel);
@@ -57,8 +57,6 @@ public class StatusPanel extends JPanel {
         buttonPanel.add(refreshButton);
         add(buttonPanel, BorderLayout.SOUTH);
 
-        // Initial load (can be empty until user navigates here or refreshes)
-        // loadApplications(mainFrame.getCurrentAdopterId()); // Load on init? Or wait for navigation? Let's wait.
     }
 
     public void loadApplications(int adopterId) {
@@ -71,14 +69,14 @@ public class StatusPanel extends JPanel {
         // Populate table
         for (Application app : applications) {
             // Fetch Pet details for better display
-            Pet pet = Database.getPetById(app.getPetId()); // Using Database directly for simplicity here
+            Pet pet = Database.getPetById(app.getPetId());
             String petName = (pet != null) ? pet.getName() : "N/A";
             String petType = (pet != null) ? pet.getType() : "N/A";
 
             Vector<Object> row = new Vector<>();
             row.add(app.getApplicationId());
-            row.add(petName); // Display Pet Name
-            row.add(petType); // Display Pet Type
+            row.add(petName);
+            row.add(petType);
             row.add(app.getStatus());
             row.add(app.getAddress());
             row.add(app.getMobileNumber());

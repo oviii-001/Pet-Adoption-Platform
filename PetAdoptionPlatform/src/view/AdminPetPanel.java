@@ -88,17 +88,17 @@ public class AdminPetPanel extends JPanel {
 
     public AdminPetPanel(PetController controller) {
         this.petController = controller;
-        setLayout(new BorderLayout(15, 15)); // Increased gaps
+        setLayout(new BorderLayout(15, 15)); 
         setBackground(BACKGROUND_COLOR);
-        setBorder(new EmptyBorder(15, 15, 15, 15)); // Add padding
+        setBorder(new EmptyBorder(15, 15, 15, 15)); 
 
-        // --- Pet List Table Panel ---
+        // Pet List Table Panel
         JPanel tablePanel = setupTablePanel();
 
-        // --- Pet Details Form & Buttons Panel ---
+        // Pet Details Form & Buttons Panel
         JPanel formAndButtonPanel = setupFormAndButtonPanel();
 
-        // --- Layout ---
+        // Layout
         add(tablePanel, BorderLayout.CENTER);
         add(formAndButtonPanel, BorderLayout.EAST);
 
@@ -252,7 +252,7 @@ public class AdminPetPanel extends JPanel {
         imageSelectionPanel.setOpaque(false);
 
         imageButton = createStyledButton("Choose Image...", PRIMARY_COLOR, BUTTON_HOVER_COLOR); // Use styled button
-        imageButton.setFont(BUTTON_FONT.deriveFont(13f)); // Slightly smaller font
+        imageButton.setFont(BUTTON_FONT.deriveFont(13f)); 
         imageButton.setBorder(new EmptyBorder(6, 12, 6, 12)); // Adjust padding
         imageButton.addActionListener(e -> selectImage());
 
@@ -270,10 +270,10 @@ public class AdminPetPanel extends JPanel {
         imageSelectionPanel.add(imagePreview, BorderLayout.CENTER);
         formPanel.add(imageSelectionPanel, gbc);
 
-        // --- Button Panel ---
+        // Button Panel
         JPanel buttonPanel = setupButtonPanel();
 
-        // --- Layout Form and Buttons ---
+        // Layout Form and Buttons
         panel.add(formPanel, BorderLayout.CENTER);
         panel.add(buttonPanel, BorderLayout.SOUTH);
 
@@ -312,7 +312,7 @@ public class AdminPetPanel extends JPanel {
     private JTextField createReadOnlyTextField(int columns) {
         JTextField textField = createStyledTextField(columns);
         textField.setEditable(false);
-        textField.setBackground(BACKGROUND_COLOR); // Different background for read-only
+        textField.setBackground(BACKGROUND_COLOR); 
         return textField;
     }
 
@@ -321,14 +321,13 @@ public class AdminPetPanel extends JPanel {
         comboBox.setFont(INPUT_FONT);
         comboBox.setBackground(INPUT_BG_COLOR);
         comboBox.setForeground(TEXT_COLOR);
-        // Basic border for consistency, might need custom renderer for full styling
         comboBox.setBorder(new RoundedBorder(INPUT_BORDER_COLOR, 1, 10));
         return comboBox;
     }
 
     private JPanel setupButtonPanel() {
         JPanel buttonPanel = new JPanel(new FlowLayout(FlowLayout.CENTER, 10, 10));
-        buttonPanel.setBackground(Color.WHITE); // Match form background
+        buttonPanel.setBackground(Color.WHITE); 
         buttonPanel.setBorder(BorderFactory.createMatteBorder(1, 0, 0, 0, INPUT_BORDER_COLOR)); // Top border
 
         addButton = createStyledButton("Add New", PRIMARY_COLOR, BUTTON_HOVER_COLOR);
@@ -366,7 +365,7 @@ public class AdminPetPanel extends JPanel {
                     bgColor = hover.darker();
                 }
                 g2.setColor(bgColor);
-                g2.fillRoundRect(0, 0, getWidth(), getHeight(), 25, 25); // More rounded
+                g2.fillRoundRect(0, 0, getWidth(), getHeight(), 25, 25);
                 super.paintComponent(g);
                 g2.dispose();
             }
@@ -439,9 +438,9 @@ public class AdminPetPanel extends JPanel {
             statusComboBox.setSelectedItem(pet.getStatus());
             descriptionArea.setText(pet.getDescription());
 
-            // Set image data from Pet object and update preview
-            selectedImageData = pet.getImageData(); // Store the byte array from DB
-            updateImagePreviewFromData(selectedImageData); // Use method that takes byte[]
+           
+            selectedImageData = pet.getImageData(); 
+            updateImagePreviewFromData(selectedImageData); 
 
         } else {
             clearForm();
@@ -497,8 +496,8 @@ public class AdminPetPanel extends JPanel {
                 while ((readNum = fis.read(buf)) != -1) {
                     bos.write(buf, 0, readNum);
                 }
-                selectedImageData = bos.toByteArray(); // Store file content as byte array
-                updateImagePreviewFromData(selectedImageData); // Update preview from the new data
+                selectedImageData = bos.toByteArray(); 
+                updateImagePreviewFromData(selectedImageData); 
             } catch (IOException e) {
                 selectedImageData = null;
                 updateImagePreviewFromData(null);
@@ -519,8 +518,8 @@ public class AdminPetPanel extends JPanel {
         temperamentField.setText("");
         statusComboBox.setSelectedIndex(0);
         descriptionArea.setText("");
-        selectedImageData = null; // Clear byte array
-        updateImagePreviewFromData(null); // Update preview to show default state
+        selectedImageData = null; 
+        updateImagePreviewFromData(null); 
         petTable.clearSelection(); 
     }
 
@@ -945,9 +944,9 @@ public class AdminPetPanel extends JPanel {
                     } else {
                         adopterNameField.setText("N/A");
                         contactField.setText("N/A");
-                        addressArea.setText("N/A"); // Clear if adopter not found
-                        mobileField.setText("N/A"); // Clear if adopter not found
-                        notesArea.setText("N/A");   // Clear if adopter not found
+                        addressArea.setText("N/A"); 
+                        mobileField.setText("N/A"); 
+                        notesArea.setText("N/A");   
                     }
                 }
             }

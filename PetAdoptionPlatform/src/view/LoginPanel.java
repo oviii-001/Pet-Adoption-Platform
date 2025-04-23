@@ -14,11 +14,9 @@ public class LoginPanel extends JPanel {
     private MainFrame mainFrame;
     private JTextField usernameField;
     private JPasswordField passwordField;
-    // Removed loginButton field as it's created and added locally
-
-    // Using admin/admin for simpler testing - CHANGE THIS FOR PRODUCTION
+    
     private static final String ADMIN_USERNAME = "admin";
-    private static final String ADMIN_PASSWORD = "admin"; // Changed from "admin123"
+    private static final String ADMIN_PASSWORD = "admin123"; 
 
     // Consistent Colors & Fonts from WelcomePanel
     private static final Color PRIMARY_COLOR = new Color(60, 90, 160); // Deeper Blue
@@ -36,7 +34,7 @@ public class LoginPanel extends JPanel {
 
     public LoginPanel(MainFrame mainFrame) {
         this.mainFrame = mainFrame;
-        setLayout(new GridBagLayout()); // Use GridBagLayout for the main panel to center content
+        setLayout(new GridBagLayout()); 
         setBackground(BACKGROUND_COLOR);
         setBorder(new EmptyBorder(20, 20, 20, 20));
 
@@ -114,8 +112,6 @@ public class LoginPanel extends JPanel {
             new RoundedBorder(INPUT_BORDER_COLOR, 1, 10),
             new EmptyBorder(8, 12, 8, 12)
         ));
-        // textField.setMaximumSize(new Dimension(Integer.MAX_VALUE, 40)); // Removed, row controls size
-        // textField.setAlignmentX(Component.CENTER_ALIGNMENT); // Removed, BorderLayout handles alignment
         return textField;
     }
 
@@ -128,8 +124,7 @@ public class LoginPanel extends JPanel {
             new RoundedBorder(INPUT_BORDER_COLOR, 1, 10),
             new EmptyBorder(8, 12, 8, 12)
         ));
-        // passwordField.setMaximumSize(new Dimension(Integer.MAX_VALUE, 40)); // Removed, row controls size
-        // passwordField.setAlignmentX(Component.CENTER_ALIGNMENT); // Removed, BorderLayout handles alignment
+       
         return passwordField;
     }
 
@@ -146,7 +141,7 @@ public class LoginPanel extends JPanel {
                 } else {
                     g2.setColor(getBackground());
                 }
-                g2.fillRoundRect(0, 0, getWidth(), getHeight(), 30, 30); // Rounded corners
+                g2.fillRoundRect(0, 0, getWidth(), getHeight(), 30, 30); 
                 super.paintComponent(g);
                 g2.dispose();
             }
@@ -198,7 +193,7 @@ public class LoginPanel extends JPanel {
         return button;
     }
 
-    // Reusing RoundedBorder class from WelcomePanel (ensure it's accessible or copy it here)
+
     private static class RoundedBorder implements Border {
         private Color color;
         private int thickness;

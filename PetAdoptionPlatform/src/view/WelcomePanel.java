@@ -31,32 +31,32 @@ public class WelcomePanel extends JPanel {
         this.mainFrame = frame;
         setLayout(new BorderLayout());
         setBackground(BACKGROUND_COLOR);
-        setBorder(new EmptyBorder(40, 40, 40, 40)); // Add padding around the whole panel
+        setBorder(new EmptyBorder(40, 40, 40, 40));
 
         // Central Content Panel using GridBagLayout
         JPanel contentPanel = new JPanel(new GridBagLayout());
         contentPanel.setBackground(BACKGROUND_COLOR);
         GridBagConstraints gbc = new GridBagConstraints();
-        gbc.gridwidth = GridBagConstraints.REMAINDER; // Each component on a new line
-        gbc.anchor = GridBagConstraints.CENTER; // Center components horizontally
-        gbc.insets = new Insets(10, 0, 10, 0); // Vertical spacing
+        gbc.gridwidth = GridBagConstraints.REMAINDER; 
+        gbc.anchor = GridBagConstraints.CENTER; 
+        gbc.insets = new Insets(10, 0, 10, 0);
 
         // Header Section
         JPanel headerPanel = createHeaderPanel();
-        gbc.weighty = 0.1; // Push other content down
-        gbc.insets = new Insets(0, 0, 30, 0); // Space below header
+        gbc.weighty = 0.1; 
+        gbc.insets = new Insets(0, 0, 30, 0); 
         contentPanel.add(headerPanel, gbc);
 
         // Features Section
         JPanel featuresPanel = createFeaturesPanel();
-        gbc.weighty = 0.5; // Takes up more vertical space
-        gbc.insets = new Insets(20, 0, 30, 0); // Space above and below features
+        gbc.weighty = 0.5; 
+        gbc.insets = new Insets(20, 0, 30, 0); 
         contentPanel.add(featuresPanel, gbc);
 
         // Button Section
         JButton startButton = createStartButton();
-        gbc.weighty = 0.1; // Push button towards bottom
-        gbc.insets = new Insets(20, 0, 0, 0); // Space above button
+        gbc.weighty = 0.1; 
+        gbc.insets = new Insets(20, 0, 0, 0); 
         contentPanel.add(startButton, gbc);
 
         add(contentPanel, BorderLayout.CENTER);
@@ -68,7 +68,7 @@ public class WelcomePanel extends JPanel {
         headerPanel.setBackground(BACKGROUND_COLOR);
         headerPanel.setAlignmentX(Component.CENTER_ALIGNMENT);
 
-        // Optional: Add logo if needed
+    
         try {
             ImageIcon logoIcon = new ImageIcon(new ImageIcon("resources/pet-logo.png").getImage().getScaledInstance(80, 80, Image.SCALE_SMOOTH));
             JLabel logoLabel = new JLabel(logoIcon);
@@ -96,7 +96,7 @@ public class WelcomePanel extends JPanel {
     }
 
     private JPanel createFeaturesPanel() {
-        JPanel featuresPanel = new JPanel(new FlowLayout(FlowLayout.CENTER, 30, 20)); // Use FlowLayout for wrapping
+        JPanel featuresPanel = new JPanel(new FlowLayout(FlowLayout.CENTER, 30, 20));
         featuresPanel.setBackground(BACKGROUND_COLOR);
         featuresPanel.setAlignmentX(Component.CENTER_ALIGNMENT);
 
@@ -122,7 +122,7 @@ public class WelcomePanel extends JPanel {
                 g2d.dispose();
             }
         };
-        shadowPanel.setOpaque(false); // Make shadow panel transparent
+        shadowPanel.setOpaque(false);
         shadowPanel.setBorder(new EmptyBorder(5, 5, 5, 5)); // Space for shadow
 
         // Main content card panel
@@ -184,8 +184,8 @@ public class WelcomePanel extends JPanel {
                 if (originalLocation == null) {
                     originalLocation = shadowPanel.getLocation();
                 }
-                shadowPanel.setLocation(originalLocation.x - 2, originalLocation.y - 2); // Slight lift effect
-                shadowPanel.setBorder(new EmptyBorder(7, 7, 3, 3)); // Adjust border for lift
+                shadowPanel.setLocation(originalLocation.x - 2, originalLocation.y - 2);
+                shadowPanel.setBorder(new EmptyBorder(7, 7, 3, 3));
                 shadowPanel.setCursor(new Cursor(Cursor.HAND_CURSOR));
                 shadowPanel.repaint();
              }
@@ -195,7 +195,7 @@ public class WelcomePanel extends JPanel {
                  if (originalLocation != null) {
                     shadowPanel.setLocation(originalLocation);
                  }
-                 shadowPanel.setBorder(new EmptyBorder(5, 5, 5, 5)); // Restore original border
+                 shadowPanel.setBorder(new EmptyBorder(5, 5, 5, 5));
                  shadowPanel.setCursor(new Cursor(Cursor.DEFAULT_CURSOR));
                  shadowPanel.repaint();
              }
@@ -232,23 +232,23 @@ public class WelcomePanel extends JPanel {
         startButton.setBackground(PRIMARY_COLOR);
         startButton.setForeground(Color.WHITE);
         startButton.setFocusPainted(false);
-        startButton.setBorder(BorderFactory.createEmptyBorder(15, 40, 15, 40)); // Padding inside button
-        startButton.setContentAreaFilled(false); // We paint the background ourselves
+        startButton.setBorder(BorderFactory.createEmptyBorder(15, 40, 15, 40)); 
+        startButton.setContentAreaFilled(false); 
         startButton.setOpaque(false);
-        startButton.setPreferredSize(new Dimension(300, 55)); // Make button larger
+        startButton.setPreferredSize(new Dimension(300, 55)); 
 
-        // Add simple hover effect logic (color change handled in paintComponent)
+       
         startButton.addMouseListener(new MouseAdapter() {
             @Override
             public void mouseEntered(MouseEvent e) {
                 startButton.setCursor(new Cursor(Cursor.HAND_CURSOR));
-                startButton.repaint(); // Trigger repaint for hover color
+                startButton.repaint(); 
             }
 
             @Override
             public void mouseExited(MouseEvent e) {
                 startButton.setCursor(new Cursor(Cursor.DEFAULT_CURSOR));
-                startButton.repaint(); // Trigger repaint for normal color
+                startButton.repaint(); 
             }
         });
 
@@ -256,7 +256,7 @@ public class WelcomePanel extends JPanel {
         return startButton;
     }
 
-    // Helper class for rounded borders
+   
     private static class RoundedBorder implements Border {
         private Color color;
         private int thickness;
@@ -274,7 +274,7 @@ public class WelcomePanel extends JPanel {
             g2d.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
             g2d.setColor(color);
             g2d.setStroke(new BasicStroke(thickness));
-            // Draw rounded rectangle border
+           
             g2d.draw(new RoundRectangle2D.Double(x + thickness / 2.0, y + thickness / 2.0,
                                                 width - thickness, height - thickness, radius, radius));
             g2d.dispose();
@@ -282,13 +282,13 @@ public class WelcomePanel extends JPanel {
 
         @Override
         public Insets getBorderInsets(Component c) {
-            // Adjust insets based on thickness to provide space for the border
+           
             return new Insets(thickness, thickness, thickness, thickness);
         }
 
         @Override
         public boolean isBorderOpaque() {
-            return true; // Border background is painted
+            return true; 
         }
     }
 } 

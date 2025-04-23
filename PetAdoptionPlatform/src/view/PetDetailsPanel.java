@@ -16,7 +16,7 @@ import javax.imageio.ImageIO;
 public class PetDetailsPanel extends JPanel {
 
     private Pet pet;
-    private MainFrame mainFrame; // For navigation
+    private MainFrame mainFrame;
 
     // UI Components
     private JLabel imageLabel;
@@ -32,7 +32,7 @@ public class PetDetailsPanel extends JPanel {
     private JTextArea descriptionAreaValue;
     private JButton applyButton;
 
-    // --- Modern Styling Constants ---
+   
     private static final Color PRIMARY_COLOR = new Color(60, 90, 160); // Deeper blue
     private static final Color SECONDARY_COLOR = new Color(230, 126, 34); // Orange (for pending status)
     private static final Color ACCENT_COLOR = new Color(75, 192, 192); // Teal accent (optional)
@@ -50,7 +50,7 @@ public class PetDetailsPanel extends JPanel {
     private static final Font LABEL_FONT = new Font("Segoe UI", Font.BOLD, 14);
     private static final Font VALUE_FONT = new Font("Segoe UI", Font.PLAIN, 14);
     private static final Font BUTTON_FONT = new Font("Segoe UI", Font.BOLD, 14);
-    private static final Font DESC_FONT = new Font("Segoe UI", Font.PLAIN, 14); // Slightly larger desc font
+    private static final Font DESC_FONT = new Font("Segoe UI", Font.PLAIN, 14); 
     private static final Font STATUS_FONT = new Font("Segoe UI", Font.BOLD, 14);
 
     public PetDetailsPanel(Pet pet, MainFrame mainFrame) {
@@ -58,7 +58,7 @@ public class PetDetailsPanel extends JPanel {
         this.mainFrame = mainFrame;
         setLayout(new BorderLayout()); // Main layout
         setBackground(BACKGROUND_COLOR);
-        setBorder(new EmptyBorder(30, 30, 30, 30)); // Increased padding
+        setBorder(new EmptyBorder(30, 30, 30, 30));
 
         setupUI();
         populateDetails();
@@ -77,47 +77,47 @@ public class PetDetailsPanel extends JPanel {
     }
 
     private void setupUI() {
-        // Central content panel with white background and rounded border/shadow
-        JPanel contentPanel = new JPanel(new BorderLayout(25, 25)); // Gaps between image/details
+        
+        JPanel contentPanel = new JPanel(new BorderLayout(25, 25)); 
         contentPanel.setBackground(PANEL_BG_COLOR);
         contentPanel.setBorder(BorderFactory.createCompoundBorder(
-             new ShadowBorder(5, 0.1f, 8, Color.GRAY), // Subtle shadow
-             new EmptyBorder(25, 25, 25, 25) // Padding inside the white panel
+             new ShadowBorder(5, 0.1f, 8, Color.GRAY),
+             new EmptyBorder(25, 25, 25, 25) 
         ));
 
-        // --- Image Panel (Left) ---
+        //Image Panel
         JPanel imagePanel = new JPanel(new BorderLayout());
-        imagePanel.setOpaque(false); // Use contentPanel background
+        imagePanel.setOpaque(false); 
         imageLabel = new JLabel();
-        imageLabel.setPreferredSize(new Dimension(300, 300)); // Slightly larger image
+        imageLabel.setPreferredSize(new Dimension(300, 300)); 
         imageLabel.setHorizontalAlignment(SwingConstants.CENTER);
         imageLabel.setVerticalAlignment(SwingConstants.CENTER);
-        imageLabel.setBorder(new RoundedBorder(BORDER_COLOR, 1, 10)); // Rounded border for image area
-        imageLabel.setOpaque(true); // Needed to show background color
-        imageLabel.setBackground(IMAGE_BG_COLOR); // Placeholder background
+        imageLabel.setBorder(new RoundedBorder(BORDER_COLOR, 1, 10));
+        imageLabel.setOpaque(true); 
+        imageLabel.setBackground(IMAGE_BG_COLOR); 
         imagePanel.add(imageLabel, BorderLayout.CENTER);
         contentPanel.add(imagePanel, BorderLayout.WEST);
 
-        // --- Details Panel (Right) ---
-        JPanel detailsPanel = new JPanel(new BorderLayout(10, 10)); // Layout for heading, grid, description
+        //Details Panel
+        JPanel detailsPanel = new JPanel(new BorderLayout(10, 10)); 
         detailsPanel.setOpaque(false);
 
-        // Pet Name Heading
-        nameLabelValue = new JLabel(" "); // Placeholder
+        // Pet Name
+        nameLabelValue = new JLabel(" "); 
         nameLabelValue.setFont(HEADING_FONT);
         nameLabelValue.setForeground(TEXT_COLOR);
-        nameLabelValue.setBorder(new EmptyBorder(0, 0, 15, 0)); // Margin below name
+        nameLabelValue.setBorder(new EmptyBorder(0, 0, 15, 0)); 
         detailsPanel.add(nameLabelValue, BorderLayout.NORTH);
 
         // Grid for details
         JPanel detailsGridPanel = new JPanel(new GridBagLayout());
         detailsGridPanel.setOpaque(false);
         GridBagConstraints gbc = new GridBagConstraints();
-        gbc.insets = new Insets(8, 5, 8, 15); // Increased vertical spacing, right margin
+        gbc.insets = new Insets(8, 5, 8, 15); 
         gbc.anchor = GridBagConstraints.WEST;
         int y = 0;
 
-        // Detail Rows (Label on left, Value on right)
+        // Detail Rows
         typeLabelValue = createValueLabel();
         addDetailRow(detailsGridPanel, gbc, y++, "Type:", typeLabelValue);
 
@@ -139,31 +139,31 @@ public class PetDetailsPanel extends JPanel {
         temperamentLabelValue = createValueLabel();
         addDetailRow(detailsGridPanel, gbc, y++, "Temperament:", temperamentLabelValue);
 
-        statusLabelValue = createValueLabel(); // Create label, font/color set in populateDetails
-        statusLabelValue.setFont(STATUS_FONT); // Set bold font
+        statusLabelValue = createValueLabel(); 
+        statusLabelValue.setFont(STATUS_FONT); 
         addDetailRow(detailsGridPanel, gbc, y++, "Status:", statusLabelValue);
 
         detailsPanel.add(detailsGridPanel, BorderLayout.CENTER);
 
-        // Description Area (Below grid)
+        // Description Area
         JPanel descriptionPanel = new JPanel(new BorderLayout(0, 5));
         descriptionPanel.setOpaque(false);
-        descriptionPanel.setBorder(new EmptyBorder(15, 0, 0, 0)); // Top margin for description
+        descriptionPanel.setBorder(new EmptyBorder(15, 0, 0, 0)); 
 
         JLabel descLabel = createHeaderLabel("Description:");
         descriptionPanel.add(descLabel, BorderLayout.NORTH);
 
-        descriptionAreaValue = new JTextArea(4, 20); // Rows, Columns
+        descriptionAreaValue = new JTextArea(4, 20); 
         descriptionAreaValue.setFont(DESC_FONT);
         descriptionAreaValue.setForeground(TEXT_COLOR);
         descriptionAreaValue.setLineWrap(true);
         descriptionAreaValue.setWrapStyleWord(true);
         descriptionAreaValue.setEditable(false);
-        descriptionAreaValue.setOpaque(false); // Use panel background
+        descriptionAreaValue.setOpaque(false); 
         descriptionAreaValue.setMargin(new Insets(5, 5, 5, 5));
 
         JScrollPane descScrollPane = new JScrollPane(descriptionAreaValue);
-        descScrollPane.setBorder(new RoundedBorder(BORDER_COLOR, 1, 5)); // Border around text area
+        descScrollPane.setBorder(new RoundedBorder(BORDER_COLOR, 1, 5)); 
         descScrollPane.setOpaque(false);
         descScrollPane.getViewport().setOpaque(false);
         descriptionPanel.add(descScrollPane, BorderLayout.CENTER);
@@ -172,15 +172,14 @@ public class PetDetailsPanel extends JPanel {
 
         contentPanel.add(detailsPanel, BorderLayout.CENTER);
 
-        // --- Button Panel (Bottom) ---
-        JPanel buttonPanel = new JPanel(new FlowLayout(FlowLayout.CENTER)); // Center the button
-        buttonPanel.setOpaque(false); // Use main background
-        buttonPanel.setBorder(new EmptyBorder(20, 0, 0, 0)); // Add space above button
+        // Button Panel
+        JPanel buttonPanel = new JPanel(new FlowLayout(FlowLayout.CENTER)); 
+        buttonPanel.setOpaque(false);
+        buttonPanel.setBorder(new EmptyBorder(20, 0, 0, 0)); 
 
         applyButton = createStyledButton("Apply for Adoption");
         buttonPanel.add(applyButton);
 
-        // --- Add Panels to Main Frame ---
         add(contentPanel, BorderLayout.CENTER);
         add(buttonPanel, BorderLayout.SOUTH);
     }
@@ -190,26 +189,26 @@ public class PetDetailsPanel extends JPanel {
         gbc.gridx = 0; gbc.gridy = y;
         gbc.gridwidth = 1;
         gbc.fill = GridBagConstraints.NONE;
-        gbc.anchor = GridBagConstraints.NORTHEAST; // Right-align label
-        gbc.weightx = 0.1; // Give some weight to label column
+        gbc.anchor = GridBagConstraints.NORTHEAST; 
+        gbc.weightx = 0.1; 
         panel.add(headerLabel, gbc);
 
         gbc.gridx = 1; gbc.gridy = y;
-        gbc.anchor = GridBagConstraints.NORTHWEST; // Left-align value
+        gbc.anchor = GridBagConstraints.NORTHWEST; 
         gbc.fill = GridBagConstraints.HORIZONTAL;
-        gbc.weightx = 0.9; // More weight to value column
+        gbc.weightx = 0.9; 
         panel.add(valueLabel, gbc);
     }
 
     private JLabel createHeaderLabel(String text) {
         JLabel label = new JLabel(text);
         label.setFont(LABEL_FONT);
-        label.setForeground(LIGHT_TEXT_COLOR); // Lighter color for labels
+        label.setForeground(LIGHT_TEXT_COLOR); 
         return label;
     }
 
     private JLabel createValueLabel() {
-        JLabel label = new JLabel(" "); // Placeholder
+        JLabel label = new JLabel(" "); 
         label.setFont(VALUE_FONT);
         label.setForeground(TEXT_COLOR);
         return label;
@@ -217,10 +216,10 @@ public class PetDetailsPanel extends JPanel {
 
     private void populateDetails() {
         if (pet == null) {
-             // Set placeholder text if pet is null
+            
              nameLabelValue.setText("Pet Not Found");
              setPlaceholderImage("No Pet Data");
-             // Optionally disable apply button
+             
              if(applyButton != null) applyButton.setEnabled(false);
              return;
         }
@@ -234,31 +233,31 @@ public class PetDetailsPanel extends JPanel {
         healthStatusLabelValue.setText(pet.getHealthStatus());
         temperamentLabelValue.setText(pet.getTemperament());
         descriptionAreaValue.setText(pet.getDescription());
-        descriptionAreaValue.setCaretPosition(0); // Scroll to top
+        descriptionAreaValue.setCaretPosition(0);
 
-        // Set status label text and color, and button state
+        
         String statusText = pet.getStatus().substring(0, 1).toUpperCase() + pet.getStatus().substring(1);
         statusLabelValue.setText(statusText);
 
         switch (pet.getStatus().toLowerCase()) {
             case "adopted":
-                statusLabelValue.setForeground(SUCCESS_COLOR_FG); // Dark Green
+                statusLabelValue.setForeground(SUCCESS_COLOR_FG); 
                 applyButton.setEnabled(false);
                 applyButton.setText("Already Adopted");
                 applyButton.setBackground(DISABLED_BUTTON_BG);
                 break;
             case "pending":
-                statusLabelValue.setForeground(SECONDARY_COLOR); // Orange
+                statusLabelValue.setForeground(SECONDARY_COLOR); 
                 applyButton.setEnabled(false);
                 applyButton.setText("Application Pending");
                 applyButton.setBackground(DISABLED_BUTTON_BG);
                 break;
             case "available":
             default:
-                statusLabelValue.setForeground(PRIMARY_COLOR); // Blue
+                statusLabelValue.setForeground(PRIMARY_COLOR); 
                 applyButton.setEnabled(true);
                 applyButton.setText("Apply for Adoption");
-                applyButton.setBackground(PRIMARY_COLOR); // Ensure it's the active color
+                applyButton.setBackground(PRIMARY_COLOR); 
                 break;
         }
 
@@ -270,12 +269,12 @@ public class PetDetailsPanel extends JPanel {
                 if (bImage != null) {
                     int labelWidth = imageLabel.getPreferredSize().width;
                     int labelHeight = imageLabel.getPreferredSize().height;
-                    // Maintain aspect ratio, fit within bounds
+                   
                     Image scaledImage = scaleImage(bImage, labelWidth, labelHeight);
                     imageLabel.setIcon(new ImageIcon(scaledImage));
                     imageLabel.setText("");
-                    imageLabel.setBackground(PANEL_BG_COLOR); // Use panel background behind image
-                     imageLabel.setBorder(new RoundedBorder(BORDER_COLOR, 1, 10)); // Keep border
+                    imageLabel.setBackground(PANEL_BG_COLOR); 
+                     imageLabel.setBorder(new RoundedBorder(BORDER_COLOR, 1, 10)); 
                 } else {
                     setPlaceholderImage("Image Format Error");
                 }
@@ -309,11 +308,11 @@ public class PetDetailsPanel extends JPanel {
 
     private void setPlaceholderImage(String text) {
         imageLabel.setIcon(null);
-        imageLabel.setText("<html><div style='text-align: center;'>" + text + "</div></html>"); // Center text
+        imageLabel.setText("<html><div style='text-align: center;'>" + text + "</div></html>"); 
         imageLabel.setFont(VALUE_FONT);
         imageLabel.setForeground(LIGHT_TEXT_COLOR);
-        imageLabel.setBackground(IMAGE_BG_COLOR); // Ensure placeholder background
-        imageLabel.setBorder(new RoundedBorder(BORDER_COLOR, 1, 10)); // Keep border
+        imageLabel.setBackground(IMAGE_BG_COLOR); 
+        imageLabel.setBorder(new RoundedBorder(BORDER_COLOR, 1, 10)); 
     }
 
     private JButton createStyledButton(String text) {
@@ -330,16 +329,14 @@ public class PetDetailsPanel extends JPanel {
                 } else if (getModel().isRollover()) {
                     currentBg = BUTTON_HOVER_BG;
                 } else {
-                    // Use the background set externally (e.g., in populateDetails)
+                    
                     currentBg = getBackground();
                 }
 
                 g2.setColor(currentBg);
-                // Fill with rounded corners
                 g2.fill(new RoundRectangle2D.Double(0, 0, getWidth(), getHeight(), 25, 25));
 
-                // Let the default painter handle text, etc.
-                // Need to make the button non-opaque for this to work correctly with custom painting
+               
                 setContentAreaFilled(false);
                 super.paintComponent(g);
 
@@ -349,29 +346,29 @@ public class PetDetailsPanel extends JPanel {
              @Override
             public Dimension getPreferredSize() {
                 Dimension size = super.getPreferredSize();
-                // Add padding horizontally
+               
                 size.width += 30;
-                size.height = Math.max(size.height, 40); // Ensure minimum height
+                size.height = Math.max(size.height, 40); 
                 return size;
             }
 
-            // Prevent default border painting
+           
              @Override
             public void setBorder(Border border) {
-                // Ignore external border setting if needed, or use EmptyBorder for padding
+                
             }
         };
 
         button.setFont(BUTTON_FONT);
-        button.setBackground(PRIMARY_COLOR); // Set initial background
+        button.setBackground(PRIMARY_COLOR);
         button.setForeground(Color.WHITE);
         button.setFocusPainted(false);
-        button.setBorder(new EmptyBorder(10, 25, 10, 25)); // Padding via border
-        button.setContentAreaFilled(false); // Important for custom painting
-        button.setOpaque(false); // Needs to be false for paintComponent background to show
+        button.setBorder(new EmptyBorder(10, 25, 10, 25)); 
+        button.setContentAreaFilled(false); 
+        button.setOpaque(false); 
         button.setCursor(new Cursor(Cursor.HAND_CURSOR));
 
-        // Repaint on hover/press/enable changes
+       
         button.addMouseListener(new MouseAdapter() {
             @Override
             public void mouseEntered(MouseEvent evt) {
@@ -387,9 +384,7 @@ public class PetDetailsPanel extends JPanel {
         return button;
     }
 
-    // --- Helper Classes for Borders ---
-
-    // RoundedBorder class (can be reused)
+  
     private static class RoundedBorder implements Border {
         private Color color;
         private int thickness;
@@ -407,7 +402,7 @@ public class PetDetailsPanel extends JPanel {
             g2d.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
             g2d.setColor(color);
             g2d.setStroke(new BasicStroke(thickness));
-            // Adjust for thickness to draw border correctly inside/outside bounds
+           
             g2d.draw(new RoundRectangle2D.Double(x + thickness / 2.0, y + thickness / 2.0,
                                                 width - thickness, height - thickness, radius, radius));
             g2d.dispose();
@@ -421,11 +416,11 @@ public class PetDetailsPanel extends JPanel {
 
         @Override
         public boolean isBorderOpaque() {
-            return false; // Allows background to show through
+            return false; 
         }
     }
 
-    // ShadowBorder class for subtle shadow effect (can be reused)
+  
     private static class ShadowBorder extends AbstractBorder {
         private int shadowSize;
         private float shadowOpacity;
@@ -448,7 +443,6 @@ public class PetDetailsPanel extends JPanel {
             for (int i = 0; i < shadowSize; i++) {
                 float alpha = shadowOpacity * (1.0f - (float) i / shadowSize);
                 g2.setColor(new Color(shadowColor.getRed(), shadowColor.getGreen(), shadowColor.getBlue(), (int) (baseAlpha * alpha)));
-                // Draw slightly larger rounded rect for shadow effect
                  g2.draw(new RoundRectangle2D.Double(x + i, y + i, width - 1 - i * 2, height - 1 - i * 2, cornerRadius, cornerRadius));
             }
             g2.dispose();

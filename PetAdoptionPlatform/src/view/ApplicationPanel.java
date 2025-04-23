@@ -274,7 +274,7 @@ public class ApplicationPanel extends JPanel {
             return;
         }
 
-        // --- Add/Update Adopter Logic ---
+        // Add/Update Adopter Logic
         int adopterId = mainFrame.getCurrentAdopterId();
         Adopter adopter = null;
         boolean isNewAdopter = false;
@@ -292,8 +292,7 @@ public class ApplicationPanel extends JPanel {
                     adopter.setNotes(notesField.getText().trim()); // Update notes in Adopter table too
                     Database.updateAdopter(adopter);
                 } else {
-                    // Adopter ID exists but not found in DB? Error or create new.
-                    // For simplicity, let's assume we create a new one if ID is invalid
+                   
                     adopterId = -1; // Reset ID to force creation
                 }
             }
@@ -304,7 +303,6 @@ public class ApplicationPanel extends JPanel {
                 adopter = new Adopter(0, adopterNameField.getText().trim(), contactInfoField.getText().trim(), "", addressField.getText().trim(), mobileNumberField.getText().trim(), notesField.getText().trim());
                 adopterId = Database.addAdopter(adopter);
                 if (adopterId > 0) {
-                    // mainFrame.setCurrentAdopterId(adopterId); // Remove this line
                 } else {
                     throw new SQLException("Failed to create new adopter record.");
                 }
@@ -316,11 +314,11 @@ public class ApplicationPanel extends JPanel {
             ex.printStackTrace();
             return; // Stop submission if adopter saving failed
         }
-        // --- End Adopter Logic ---
+       
 
-        // Now create and submit the application with the correct adopter ID
+        
         Application application = new Application(adopterId, currentPet.getPetId());
-        application.setAddress(addressField.getText().trim()); // Keep these for the application record
+        application.setAddress(addressField.getText().trim()); 
         application.setMobileNumber(mobileNumberField.getText().trim());
         application.setNotes(notesField.getText().trim());
 
@@ -331,7 +329,7 @@ public class ApplicationPanel extends JPanel {
                     "Application submitted successfully!",
                     "Success", JOptionPane.INFORMATION_MESSAGE);
             clearFormFields(); // Clear the form after successful submission
-            mainFrame.showPanel("PetBrowse"); // Go back to browsing
+            mainFrame.showPanel("PetBrowse"); 
         } else {
             JOptionPane.showMessageDialog(this,
                     "Failed to submit application. Please try again later or contact support.",
@@ -340,10 +338,7 @@ public class ApplicationPanel extends JPanel {
     }
 
     private void clearFormFields() {
-        // Clear fields, but maybe keep name/contact if user is "logged in"?
-        // For now, let's clear everything related to the application itself.
-        // Keep adopterNameField and contactInfoField if mainFrame.getCurrentAdopterId() > 0?
-        // Let's clear all for simplicity now.
+        
         adopterNameField.setText("");
         contactInfoField.setText("");
         addressField.setText("");

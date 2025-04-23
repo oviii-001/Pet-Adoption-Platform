@@ -1,9 +1,9 @@
 package view;
 
 import controller.ApplicationController;
-import controller.PetController; // Needed to potentially refresh pet list after status change
+import controller.PetController; 
 import model.Application;
-import model.Database; // To get Pet/Adopter names
+import model.Database; 
 import model.Pet;
 import model.Adopter;
 
@@ -15,19 +15,19 @@ import java.util.Vector;
 
 public class AdminApplicationPanel extends JPanel {
     private ApplicationController applicationController;
-    private PetController petController; // To refresh pet list if needed
-    private MainFrame mainFrame; // Potentially needed later
+    private PetController petController; 
+    private MainFrame mainFrame; 
 
     private JTable applicationTable;
     private DefaultTableModel tableModel;
     private JButton approveButton;
     private JButton rejectButton;
-    private JButton refreshButton; // Added refresh
+    private JButton refreshButton; 
 
     public AdminApplicationPanel(ApplicationController appController, PetController petCtrl) {
         this.applicationController = appController;
         this.petController = petCtrl;
-        // this.mainFrame = frame; // Not strictly needed for current actions
+       
         setLayout(new BorderLayout());
 
         // Table setup
@@ -35,7 +35,7 @@ public class AdminApplicationPanel extends JPanel {
         tableModel = new DefaultTableModel(columnNames, 0){
             @Override
             public boolean isCellEditable(int row, int column) {
-                return false; // Non-editable
+                return false; 
             }
         };
         applicationTable = new JTable(tableModel);
@@ -78,7 +78,7 @@ public class AdminApplicationPanel extends JPanel {
 
         // Initial load
         refreshApplicationList();
-        updateButtonStates(); // Initially disable buttons
+        updateButtonStates(); 
     }
 
     public void refreshApplicationList() {
@@ -148,13 +148,10 @@ public class AdminApplicationPanel extends JPanel {
                 JOptionPane.showMessageDialog(this,
                         "Application #" + applicationId + " status updated to '" + newStatus + "'.",
                         "Success", JOptionPane.INFORMATION_MESSAGE);
-                refreshApplicationList(); // Refresh the list to show the change
-                // If approved, the pet status also changed, so potentially refresh admin pet view too
-                // This requires access to the AdminPetPanel or triggering refresh via MainFrame/Controller coordination
+                refreshApplicationList(); 
+                
                 System.out.println("Triggering potential refresh of Admin Pet Panel");
-                // In a more complex setup, use listeners or observers. For now, just log.
-                // If petController is shared, it *might* trigger updates if AdminPetPanel listens to it,
-                // but explicit refresh call is safer if needed immediately.
+              
 
             } else {
                 JOptionPane.showMessageDialog(this,
