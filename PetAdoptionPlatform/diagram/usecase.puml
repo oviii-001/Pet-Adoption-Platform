@@ -1,0 +1,28 @@
+@startuml usecase
+left to right direction
+
+actor Adopter
+actor Admin
+
+rectangle "Pet Adoption System" {
+  Adopter -- (Login)
+  Adopter -- (Browse Pets)
+  Adopter -- (View Pet Details)
+  Adopter -- (Set Preferences)
+  Adopter -- (Submit Application)
+  Adopter -- (View Application Status)
+  Adopter -- (View Matched Pets)
+
+  (Login) -- Admin
+  (Manage Pets) -- Admin
+  (Manage Applications) -- Admin
+
+  (Manage Pets) .> (Add Pet) : include
+  (Manage Pets) .> (Update Pet) : include
+  (Manage Pets) .> (Delete Pet) : include
+
+  (Manage Applications) .> (View Applications) : include
+  (Manage Applications) .> (Approve Application) : include
+  (Manage Applications) .> (Reject Application) : include
+}
+@enduml

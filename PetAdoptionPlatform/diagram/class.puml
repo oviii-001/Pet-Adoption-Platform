@@ -1,0 +1,125 @@
+@startuml class
+
+class Main {
+  +main(String[] args)
+}
+
+class Database {
+  -Connection connection
+  +initializeDatabase()
+  +closeConnection()
+  +addPet(Pet pet)
+  +updatePet(Pet pet)
+  +deletePet(int petId)
+  +getAllPets(): List<Pet>
+  +getPetById(int petId): Pet
+  +addAdopter(Adopter adopter)
+  +getAdopter(String username): Adopter
+  +addApplication(Application application)
+  +getApplicationByPetId(int petId): Application
+  +getAllApplications(): List<Application>
+  +updateApplicationStatus(int appId, String status)
+  ' ... other database methods
+}
+
+class Pet {
+  -int id
+  -String name
+  -String species
+  -String breed
+  -int age
+  -String gender
+  -String description
+  -String status
+  ' +getters/setters
+}
+
+class Adopter {
+  -int id
+  -String username
+  -String password
+  -String name
+  -String contactInfo
+  -String preferences
+  ' +getters/setters
+}
+
+class Application {
+  -int id
+  -int petId
+  -int adopterId
+  -String submissionDate
+  -String status  // e.g., Pending, Approved, Rejected
+  ' +getters/setters
+}
+
+class MainFrame {
+  -LoginPanel loginPanel
+  -WelcomePanel welcomePanel
+  -PetListPanel petListPanel
+  ' ... other panels
+  +showPanel(String panelName)
+}
+
+package view {
+  class LoginPanel
+  class WelcomePanel
+  class PetListPanel
+  class PetDetailsPanel
+  class ApplicationPanel
+  class AdminPetPanel
+  class AdminApplicationPanel
+  ' ... other UI panels
+}
+
+package controller {
+  class PetController {
+    -Database db
+    +getAllPets(): List<Pet>
+    +addPet(Pet pet)
+    ' ... methods to handle pet logic
+  }
+  class AdopterController {
+     -Database db
+     +authenticate(String username, String password): Adopter
+     +registerAdopter(Adopter adopter)
+    ' ... methods to handle adopter logic
+  }
+  class ApplicationController {
+     -Database db
+     +submitApplication(Application app)
+     +getApplications(): List<Application>
+     +updateStatus(int appId, String status)
+    ' ... methods to handle application logic
+  }
+}
+
+Main --> Database : initializes
+Main --> MainFrame : creates
+
+MainFrame o-- view.LoginPanel
+MainFrame o-- view.WelcomePanel
+MainFrame o-- view.PetListPanel
+' ... other compositions with panels
+
+view.LoginPanel --> controller.AdopterController : interacts
+view.PetListPanel --> controller.PetController : interacts
+view.ApplicationPanel --> controller.ApplicationController : interacts
+view.AdminPetPanel --> controller.PetController : interacts
+view.AdminApplicationPanel --> controller.ApplicationController : interacts
+
+controller.PetController --> Database : uses
+controller.AdopterController --> Database : uses
+controller.ApplicationController --> Database : uses
+
+controller.PetController --> model.Pet : manages
+controller.AdopterController --> model.Adopter : manages
+controller.ApplicationController --> model.Application : manages
+controller.ApplicationController --> model.Pet : interacts
+controller.ApplicationController --> model.Adopter : interacts
+
+Database o-- model.Pet
+Database o-- model.Adopter
+Database o-- model.Application
+
+@enduml

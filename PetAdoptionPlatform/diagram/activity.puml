@@ -1,0 +1,41 @@
+@startuml activity
+
+|Adopter|
+start
+:Login to System;
+:Browse Available Pets;
+:Select Desired Pet;
+:View Pet Details;
+:Initiate Application Process;
+-> |System|
+
+|System|
+:Display Application Form;
+note right
+  The form may be pre-filled with
+  adopter's existing profile information.
+end note
+-> |Adopter|
+
+|Adopter|
+:Fill / Verify Application Details;
+:Submit Application Form;
+-> |System|
+
+|System|
+:Receive Submitted Data;
+if (Is Data Valid?) then (Yes)
+  :Create Application Record;
+  :Store Application in Database;
+  :Send Confirmation to Adopter;
+  -> |Adopter|
+  :Receive Submission Confirmation;
+  stop
+else (No)
+  :Display Validation Errors;
+  -> |Adopter|
+  :Review and Correct Errors;
+  -[#darkblue]-> :Fill / Verify Application Details;
+endif
+
+@enduml
