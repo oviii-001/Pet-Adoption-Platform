@@ -27,7 +27,7 @@ A desktop application for finding and adopting pets.
 
 1.  **Clone the repository:**
     ```bash
-    git clone https://example.com/your-repo.git
+    git clone https://github.com/oviii-001/Pet-Adoption-Platform.git
     cd Pet-Adoption-Platform/PetAdoptionPlatform
     ```
 
